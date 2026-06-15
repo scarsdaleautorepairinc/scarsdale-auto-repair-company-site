@@ -8,6 +8,7 @@ import {
   ChevronUp,
   ClipboardCheck,
   Gauge,
+  FileText,
   Mail,
   MapPin,
   Menu,
@@ -143,6 +144,25 @@ const testimonials = [
   'A straightforward repair partner for diagnostics, maintenance, and inspection readiness.'
 ];
 
+const processSteps = [
+  {
+    title: 'Request',
+    text: 'Share the vehicle concern, service need, or maintenance request.'
+  },
+  {
+    title: 'Review',
+    text: 'The issue is reviewed with practical diagnostics and clear service priorities.'
+  },
+  {
+    title: 'Service',
+    text: 'Repair or maintenance work is completed with attention to safety and reliability.'
+  },
+  {
+    title: 'Return',
+    text: 'Vehicles are prepared for return to daily commercial operation.'
+  }
+];
+
 function Header({ activePath }) {
   const [open, setOpen] = useState(false);
 
@@ -268,10 +288,15 @@ function AboutPage() {
 function ServicesPage() {
   return (
     <>
-      <PageTitle eyebrow="Services" title="Fleet and Commercial Vehicle Services">
+      <PageTitle
+        eyebrow="Services"
+        title="Fleet and Commercial Vehicle Services"
+        actions={<ButtonLink href={routePath('/contact')}>Request Service</ButtonLink>}
+      >
         Repair, diagnostics, maintenance, and inspection support for business vehicles.
       </PageTitle>
       <ServicesContent />
+      <ServiceProcess />
       <FaqSection />
       <ContactCta />
     </>
@@ -281,7 +306,11 @@ function ServicesPage() {
 function ContactPage() {
   return (
     <>
-      <PageTitle eyebrow="Contact" title={company}>
+      <PageTitle
+        eyebrow="Contact"
+        title={company}
+        actions={<ButtonLink href={`mailto:${email}`} variant="outline">Email Us</ButtonLink>}
+      >
         Request service information or contact the Mount Vernon, NY office.
       </PageTitle>
       <ContactSection />
@@ -290,12 +319,15 @@ function ContactPage() {
   );
 }
 
-function PageTitle({ eyebrow, title, children }) {
+function PageTitle({ eyebrow, title, children, actions }) {
   return (
     <section className="page-title">
-      <p className="eyebrow">{eyebrow}</p>
-      <h1>{title}</h1>
-      <p>{children}</p>
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{children}</p>
+      </div>
+      {actions && <div className="page-title-actions">{actions}</div>}
     </section>
   );
 }
@@ -357,6 +389,26 @@ function ServicesContent({ preview = false }) {
   );
 }
 
+function ServiceProcess() {
+  return (
+    <section className="section process-band">
+      <div className="section-heading">
+        <p className="eyebrow">How Service Works</p>
+        <h2>A simple process for business vehicle needs</h2>
+      </div>
+      <div className="process-grid">
+        {processSteps.map((step, index) => (
+          <article className="process-step" key={step.title}>
+            <span>{index + 1}</span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CareersPreview() {
   return (
     <section className="section careers-preview">
@@ -382,6 +434,11 @@ function CareersPage() {
 
       <main className="job-wrap">
         <article className="job-posting" aria-labelledby="systems-administrator-title">
+          <div className="recruitment-note">
+            <FileText size={18} aria-hidden="true" />
+            <span>Public recruitment posting. This page is accessible without login and formatted for screenshot or print records.</span>
+          </div>
+
           <div className="job-header">
             <div>
               <p className="eyebrow">Job Posting</p>
