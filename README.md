@@ -4,7 +4,7 @@ Standalone public company website for Scarsdale Auto Repair, Inc. This project i
 
 ## Pages
 
-- Home
+- Home at `/`
 - About Us at `/about`
 - Services at `/services`
 - Careers at `/careers`
@@ -12,10 +12,24 @@ Standalone public company website for Scarsdale Auto Repair, Inc. This project i
 
 The Careers page includes a formal, printable public job posting for a Systems Administrator position in Mount Vernon, NY.
 
+## Features
+
+- Sticky responsive navigation with active page highlighting
+- Professional homepage calls to action and business summary cards
+- Detailed services page with organized service cards
+- Public Careers page with printable PERM-friendly job posting layout
+- Contact form with client-side confirmation message
+- FAQ, testimonials, SEO metadata, favicon, robots.txt, sitemap.xml, and GitHub Pages deployment workflow
+
 ## Setup
 
 ```bash
 npm install
+```
+
+## Development
+
+```bash
 npm run dev
 ```
 
@@ -37,20 +51,14 @@ npm run preview
 
 ## Deployment
 
-This is a static Vite site and can be deployed to common static hosting platforms, including:
+This site deploys to GitHub Pages with the workflow in `.github/workflows/deploy.yml`.
 
-- Netlify
-- Vercel
-- Cloudflare Pages
-- GitHub Pages
-- Any web server capable of serving static files from `dist`
-
-For most hosts, use:
+For other static hosts, use:
 
 - Build command: `npm run build`
 - Publish directory: `dist`
 
-Because `/careers` is handled by the React static app, configure the host to route unknown paths back to `index.html` if required by the platform. Netlify and Vercel usually handle this automatically for Vite/SPA deployments when configured as a single-page app.
+Because `/careers` is handled by the React static app, configure the host to route unknown paths back to `index.html` if required by the platform.
 
 ## Updating the Careers Posting
 
