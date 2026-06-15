@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   Gauge,
   FileText,
+  Clock,
   Mail,
   MapPin,
   Menu,
@@ -26,10 +27,18 @@ import './styles.css';
 
 const company = 'Scarsdale Auto Repair, Inc.';
 const city = 'Mount Vernon, NY';
-const phone = '[phone placeholder]';
-const email = '[company email placeholder]';
+const streetAddress = '48 West Broad Street';
+const fullAddress = `${streetAddress}, ${city} 10552`;
+const phone = '(929) 214-2748';
+const phoneHref = '+19292142748';
+const email = 'scarsdaleautorepairinc@gmail.com';
 const postingDate = 'June 14, 2026';
 const basePath = import.meta.env.BASE_URL;
+const businessHours = [
+  'Monday - Friday: 8:00 AM - 6:00 PM',
+  'Saturday: By Appointment',
+  'Sunday: Closed'
+];
 
 function routePath(path) {
   const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
@@ -206,9 +215,13 @@ function Header({ activePath }) {
 function Footer() {
   return (
     <footer className="site-footer">
-      <div>
+      <div className="footer-company">
         <strong>{company}</strong>
-        <span>{city}</span>
+        <span>{streetAddress}, {city} 10552</span>
+      </div>
+      <div className="footer-contact">
+        <a href={`tel:${phoneHref}`}><Phone size={16} aria-hidden="true" /> {phone}</a>
+        <a href={`mailto:${email}`}><Mail size={16} aria-hidden="true" /> {email}</a>
       </div>
       <p>&copy; {new Date().getFullYear()} {company}. All rights reserved.</p>
     </footer>
@@ -449,59 +462,64 @@ function CareersPage() {
                 <Printer size={18} aria-hidden="true" />
                 Print Posting
               </button>
-              <a className="button primary" href={`mailto:${email}?subject=Systems Administrator Application`}>
+              <a className="button primary" href={`mailto:${email}`}>
                 <Mail size={18} aria-hidden="true" />
-                Apply by Email
+                Email Resume
+              </a>
+              <a className="button outline" href={`tel:${phoneHref}`}>
+                <Phone size={18} aria-hidden="true" />
+                Call Us
               </a>
             </div>
           </div>
 
           <dl className="job-details">
             <div>
-              <dt><Building2 size={17} aria-hidden="true" /> Employer</dt>
-              <dd>{company}</dd>
+              <dt><BriefcaseBusiness size={17} aria-hidden="true" /> Job Title</dt>
+              <dd>Systems Administrator</dd>
             </div>
             <div>
-              <dt><MapPin size={17} aria-hidden="true" /> Location</dt>
+              <dt><MapPin size={17} aria-hidden="true" /> Job Location</dt>
               <dd>{city}</dd>
             </div>
             <div>
-              <dt><BriefcaseBusiness size={17} aria-hidden="true" /> Job Type</dt>
-              <dd>Full-time</dd>
+              <dt><Building2 size={17} aria-hidden="true" /> Employer</dt>
+              <dd>{company}</dd>
             </div>
             <div>
               <dt><CalendarDays size={17} aria-hidden="true" /> Posting Date</dt>
               <dd>{postingDate}</dd>
             </div>
+            <div>
+              <dt><FileText size={17} aria-hidden="true" /> Salary</dt>
+              <dd>$99,195/year</dd>
+            </div>
           </dl>
 
           <section className="job-section">
-            <h3>Job Duties</h3>
-            <ul>
-              <li>Administer, monitor, and maintain company computer systems, workstations, and network resources.</li>
-              <li>Support business software, user accounts, security settings, data backups, and system access controls.</li>
-              <li>Troubleshoot hardware, software, connectivity, and equipment issues for office and operations staff.</li>
-              <li>Coordinate technology vendors, maintain system documentation, and assist with technology planning.</li>
-              <li>Help improve reliability, security, and efficiency of information systems used in daily operations.</li>
-            </ul>
+            <h3>Duties</h3>
+            <p>
+              Responsible for the Automotive IT Infrastructure including designing, configuring, and maintenance by supporting Amazon fleet vehicle diagnostics and maintenance operations. Integrate vehicle diagnostic systems (e.g., OBD-II readers, fault code scanners) with internal databases and service management software. Configure and optimize billing systems tied to repair logs, inspection records, and service schedules, ensuring accurate financial and operational reporting. Implement cybersecurity protocols, user access controls, and endpoint protection across networked systems. Coordinate system upgrades and automation tools to support preventive maintenance. Collaborate with mechanical and service teams to align IT systems with shop workflows and diagnostic procedures. Monitor system performance and automate alerts for IT or diagnostic failures. Train technicians and office staff on new IT tools, system dashboards, and software features that enhance diagnostic efficiency. Design and implement a public-facing company website to manage service appointments, vehicle diagnostics intake, and client communications.
+            </p>
           </section>
 
           <section className="job-section">
             <h3>Requirements</h3>
-            <ul>
-              <li>Relevant education, training, or professional experience in systems administration or information technology.</li>
-              <li>Knowledge of computer hardware, operating systems, networking, cybersecurity basics, and user support practices.</li>
-              <li>Ability to document procedures, communicate clearly, and manage multiple support requests responsibly.</li>
-              <li>Experience supporting small business technology environments is preferred.</li>
-            </ul>
+            <p>
+              Master’s degree in Information Systems, Computer Science, or closely related field and 1 year of experience in the job offered or closely related position. Experience which may have been obtained concurrently must include 1 year of experience with: maintaining IT and network infrastructure to support fleet maintenance operations for Amazon; and configured and optimized billing systems tied to repair logs, inspection records, and service schedules, ensuring accurate financial and operational reporting.
+            </p>
           </section>
 
           <section className="job-section application">
-            <h3>Application Instructions</h3>
-            <p>
-              Qualified applicants should submit a resume for consideration. To apply, please email your
-              resume to: <a href={`mailto:${email}`}><strong>{email}</strong></a>
-            </p>
+            <h3>Apply / Mail Resume To</h3>
+            <address>
+              Fares Jamal<br />
+              {company}<br />
+              {streetAddress}<br />
+              Mount Vernon, NY 10552<br />
+              Email: <a href={`mailto:${email}`}>{email}</a><br />
+              Phone: <a href={`tel:${phoneHref}`}>{phone}</a>
+            </address>
           </section>
         </article>
       </main>
@@ -525,9 +543,18 @@ function ContactSection({ compact = false }) {
           <p className="eyebrow">Contact</p>
           <h2>{compact ? company : 'Request Service Information'}</h2>
           <div className="contact-list">
-            <p><MapPin size={19} aria-hidden="true" /> {city}</p>
-            <a href={`tel:${phone}`}><Phone size={19} aria-hidden="true" /> {phone}</a>
+            <p><MapPin size={19} aria-hidden="true" /> {streetAddress}, Mount Vernon, NY 10552</p>
+            <a href={`tel:${phoneHref}`}><Phone size={19} aria-hidden="true" /> {phone}</a>
             <a href={`mailto:${email}`}><Mail size={19} aria-hidden="true" /> {email}</a>
+            {!compact && (
+              <p className="hours-card">
+                <Clock size={19} aria-hidden="true" />
+                <span>
+                  <strong>Business Hours</strong>
+                  {businessHours.map((line) => <span key={line}>{line}</span>)}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -616,7 +643,7 @@ function ContactCta() {
       <div>
         <p className="eyebrow">Contact</p>
         <h2>Need service information?</h2>
-        <p>Use the Contact page for the company location, phone placeholder, email placeholder, and request form.</p>
+        <p>Use the Contact page for the company location, phone, email, business hours, and request form.</p>
       </div>
       <ButtonLink href={routePath('/contact')}>Contact Us</ButtonLink>
     </section>

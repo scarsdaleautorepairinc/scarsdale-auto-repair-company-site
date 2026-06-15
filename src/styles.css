@@ -467,7 +467,7 @@ h3 {
 .contact-list p,
 .contact-list a {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   min-height: 58px;
   margin: 0;
@@ -475,6 +475,15 @@ h3 {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   color: #e8f0f2;
+}
+
+.hours-card > span {
+  display: grid;
+  gap: 3px;
+}
+
+.hours-card strong {
+  color: #ffffff;
 }
 
 .contact-list a:hover {
@@ -542,6 +551,22 @@ h3 {
 .site-footer div {
   display: grid;
   gap: 3px;
+}
+
+.footer-contact {
+  justify-items: start;
+}
+
+.footer-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #d6e1e4;
+}
+
+.footer-contact a:hover {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 .site-footer p {
@@ -671,6 +696,10 @@ h3 {
   color: #37464d;
 }
 
+.job-section p {
+  color: #37464d;
+}
+
 .job-section li {
   margin-bottom: 9px;
 }
@@ -685,6 +714,13 @@ h3 {
 .application a {
   color: #8f321f;
   text-decoration: underline;
+}
+
+.application address {
+  color: #283941;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.7;
 }
 
 .back-to-top {
@@ -830,14 +866,17 @@ h3 {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .footer-contact {
+    gap: 8px;
+  }
 }
 
 @media print {
   .site-header,
   .site-footer,
   .page-title,
-  .print-button,
-  .job-actions .button,
+  .job-actions,
   .back-to-top {
     display: none;
   }
@@ -861,6 +900,11 @@ h3 {
 
   .job-details div,
   .application {
+    background: #ffffff;
+  }
+
+  .recruitment-note {
+    border-color: #999999;
     background: #ffffff;
   }
 }
