@@ -19,13 +19,19 @@ const city = 'Mount Vernon, NY';
 const phone = '[phone placeholder]';
 const email = '[company email placeholder]';
 const postingDate = 'June 14, 2026';
+const basePath = import.meta.env.BASE_URL;
+
+function routePath(path) {
+  const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
+  return `${normalizedBase}${path.replace(/^\//, '')}`;
+}
 
 const navItems = [
-  { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
-  { label: 'Services', href: '/services' },
-  { label: 'Careers', href: '/careers' },
-  { label: 'Contact', href: '/contact' }
+  { label: 'Home', href: routePath('/') },
+  { label: 'About', href: routePath('/about') },
+  { label: 'Services', href: routePath('/services') },
+  { label: 'Careers', href: routePath('/careers') },
+  { label: 'Contact', href: routePath('/contact') }
 ];
 
 const services = [
@@ -42,7 +48,7 @@ const services = [
 function Header() {
   return (
     <header className="site-header">
-      <a className="brand" href="/">
+      <a className="brand" href={routePath('/')}>
         <span className="brand-mark" aria-hidden="true">
           <Wrench size={20} />
         </span>
@@ -87,8 +93,8 @@ function HomePage() {
             for businesses operating in and around Mount Vernon, New York.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="/services">View Services</a>
-            <a className="button secondary" href="/careers">Careers</a>
+            <a className="button primary" href={routePath('/services')}>View Services</a>
+            <a className="button secondary" href={routePath('/careers')}>Careers</a>
           </div>
         </div>
       </section>
@@ -106,7 +112,7 @@ function HomePage() {
             to view posted positions.
           </p>
         </div>
-        <a className="button primary" href="/careers">Open Careers Page</a>
+        <a className="button primary" href={routePath('/careers')}>Open Careers Page</a>
       </section>
 
       <ContactSection />
@@ -294,13 +300,18 @@ function ContactCta() {
         <h2>Need service information?</h2>
         <p>Use the Contact page for the company location, phone placeholder, and email placeholder.</p>
       </div>
-      <a className="button primary" href="/contact">Contact Us</a>
+      <a className="button primary" href={routePath('/contact')}>Contact Us</a>
     </section>
   );
 }
 
 function App() {
-  const path = window.location.pathname.replace(/\/$/, '') || '/';
+  const baseUrl = basePath.replace(/\/$/, '');
+  let path = window.location.pathname;
+  if (baseUrl && baseUrl !== '/' && path.startsWith(baseUrl)) {
+    path = path.slice(baseUrl.length) || '/';
+  }
+  path = path.replace(/\/$/, '') || '/';
   const pages = {
     '/': <HomePage />,
     '/about': <AboutPage />,
