@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronUp,
   ClipboardCheck,
+  Copy,
   Gauge,
   FileText,
   Clock,
@@ -15,6 +16,7 @@ import {
   Menu,
   Phone,
   Printer,
+  Share2,
   ShieldCheck,
   Sparkles,
   Star,
@@ -439,30 +441,67 @@ function CareersPreview() {
 }
 
 function CareersPage() {
+  const [openSections, setOpenSections] = useState({
+    overview: true,
+    duties: true,
+    requirements: false,
+    salary: false,
+    apply: true
+  });
+  const [copyStatus, setCopyStatus] = useState('');
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setCanShare(Boolean(navigator.share));
+  }, []);
+
+  function toggleSection(section) {
+    setOpenSections((current) => ({
+      ...current,
+      [section]: !current[section]
+    }));
+  }
+
+  async function copyJobLink() {
+    const jobUrl = `${window.location.origin}${routePath('/careers')}`;
+    await navigator.clipboard.writeText(jobUrl);
+    setCopyStatus('Job posting link copied.');
+    window.setTimeout(() => setCopyStatus(''), 2600);
+  }
+
+  async function sharePosting() {
+    const jobUrl = `${window.location.origin}${routePath('/careers')}`;
+    await navigator.share({
+      title: 'Systems Administrator',
+      text: `${company} is hiring a Systems Administrator in ${city}.`,
+      url: jobUrl
+    });
+  }
+
   return (
     <>
-      <PageTitle eyebrow="Public Posting" title="Careers">
-        Open positions with {company} are posted below for public review and recruitment documentation.
+      <PageTitle
+        eyebrow="Careers"
+        title="Careers"
+        actions={<span className="position-badge">Open Position</span>}
+      >
+        Join Scarsdale Auto Repair, Inc. and support modern fleet maintenance, diagnostics, and automotive technology operations.
       </PageTitle>
 
       <main className="job-wrap">
         <article className="job-posting" aria-labelledby="systems-administrator-title">
-          <div className="recruitment-note">
-            <FileText size={18} aria-hidden="true" />
-            <span>Public recruitment posting. This page is accessible without login and formatted for screenshot or print records.</span>
-          </div>
-
           <div className="job-header">
             <div>
               <p className="eyebrow">Job Posting</p>
               <h2 id="systems-administrator-title">Systems Administrator</h2>
+              <p className="job-location-line">{city}</p>
             </div>
             <div className="job-actions">
               <button className="print-button" type="button" onClick={() => window.print()}>
                 <Printer size={18} aria-hidden="true" />
                 Print Posting
               </button>
-              <a className="button primary" href={`mailto:${email}`}>
+              <a className="button primary" href={`mailto:${email}?subject=Application%20for%20Systems%20Administrator%20Position`}>
                 <Mail size={18} aria-hidden="true" />
                 Email Resume
               </a>
@@ -470,16 +509,28 @@ function CareersPage() {
                 <Phone size={18} aria-hidden="true" />
                 Call Us
               </a>
+              <button className="print-button" type="button" onClick={copyJobLink}>
+                <Copy size={18} aria-hidden="true" />
+                Copy Job Link
+              </button>
+              {canShare && (
+                <button className="print-button" type="button" onClick={sharePosting}>
+                  <Share2 size={18} aria-hidden="true" />
+                  Share Posting
+                </button>
+              )}
             </div>
           </div>
 
-          <dl className="job-details">
+          {copyStatus && <p className="copy-status" role="status">{copyStatus}</p>}
+
+          <dl className="job-details quick-summary" aria-label="Quick job summary">
             <div>
-              <dt><BriefcaseBusiness size={17} aria-hidden="true" /> Job Title</dt>
+              <dt><BriefcaseBusiness size={17} aria-hidden="true" /> Position</dt>
               <dd>Systems Administrator</dd>
             </div>
             <div>
-              <dt><MapPin size={17} aria-hidden="true" /> Job Location</dt>
+              <dt><MapPin size={17} aria-hidden="true" /> Location</dt>
               <dd>{city}</dd>
             </div>
             <div>
@@ -494,36 +545,109 @@ function CareersPage() {
               <dt><FileText size={17} aria-hidden="true" /> Salary</dt>
               <dd>$99,195/year</dd>
             </div>
+            <div>
+              <dt><Mail size={17} aria-hidden="true" /> Application Method</dt>
+              <dd>Mail resume / email resume</dd>
+            </div>
           </dl>
 
-          <section className="job-section">
-            <h3>Duties</h3>
-            <p>
-              Responsible for the Automotive IT Infrastructure including designing, configuring, and maintenance by supporting Amazon fleet vehicle diagnostics and maintenance operations. Integrate vehicle diagnostic systems (e.g., OBD-II readers, fault code scanners) with internal databases and service management software. Configure and optimize billing systems tied to repair logs, inspection records, and service schedules, ensuring accurate financial and operational reporting. Implement cybersecurity protocols, user access controls, and endpoint protection across networked systems. Coordinate system upgrades and automation tools to support preventive maintenance. Collaborate with mechanical and service teams to align IT systems with shop workflows and diagnostic procedures. Monitor system performance and automate alerts for IT or diagnostic failures. Train technicians and office staff on new IT tools, system dashboards, and software features that enhance diagnostic efficiency. Design and implement a public-facing company website to manage service appointments, vehicle diagnostics intake, and client communications.
-            </p>
-          </section>
+          <div className="job-accordion">
+            <JobAccordionSection
+              id="overview"
+              title="Job Overview"
+              open={openSections.overview}
+              onToggle={() => toggleSection('overview')}
+            >
+              <dl className="overview-list">
+                <div>
+                  <dt>Job Title</dt>
+                  <dd>Systems Administrator</dd>
+                </div>
+                <div>
+                  <dt>Job Location</dt>
+                  <dd>{city}</dd>
+                </div>
+                <div>
+                  <dt>Employer</dt>
+                  <dd>{company}</dd>
+                </div>
+                <div>
+                  <dt>Posting Date</dt>
+                  <dd>{postingDate}</dd>
+                </div>
+              </dl>
+            </JobAccordionSection>
 
-          <section className="job-section">
-            <h3>Requirements</h3>
-            <p>
-              Master’s degree in Information Systems, Computer Science, or closely related field and 1 year of experience in the job offered or closely related position. Experience which may have been obtained concurrently must include 1 year of experience with: maintaining IT and network infrastructure to support fleet maintenance operations for Amazon; and configured and optimized billing systems tied to repair logs, inspection records, and service schedules, ensuring accurate financial and operational reporting.
-            </p>
-          </section>
+            <JobAccordionSection
+              id="duties"
+              title="Duties"
+              open={openSections.duties}
+              onToggle={() => toggleSection('duties')}
+            >
+              <p>
+                Responsible for the Automotive IT Infrastructure including designing, configuring, and maintenance by supporting Amazon fleet vehicle diagnostics and maintenance operations. Integrate vehicle diagnostic systems (e.g., OBD-II readers, fault code scanners) with internal databases and service management software. Configure and optimize billing systems tied to repair logs, inspection records, and service schedules, ensuring accurate financial and operational reporting. Implement cybersecurity protocols, user access controls, and endpoint protection across networked systems. Coordinate system upgrades and automation tools to support preventive maintenance. Collaborate with mechanical and service teams to align IT systems with shop workflows and diagnostic procedures. Monitor system performance and automate alerts for IT or diagnostic failures. Train technicians and office staff on new IT tools, system dashboards, and software features that enhance diagnostic efficiency. Design and implement a public-facing company website to manage service appointments, vehicle diagnostics intake, and client communications.
+              </p>
+            </JobAccordionSection>
 
-          <section className="job-section application">
-            <h3>Apply / Mail Resume To</h3>
-            <address>
-              Fares Jamal<br />
-              {company}<br />
-              {streetAddress}<br />
-              Mount Vernon, NY 10552<br />
-              Email: <a href={`mailto:${email}`}>{email}</a><br />
-              Phone: <a href={`tel:${phoneHref}`}>{phone}</a>
-            </address>
-          </section>
+            <JobAccordionSection
+              id="requirements"
+              title="Requirements"
+              open={openSections.requirements}
+              onToggle={() => toggleSection('requirements')}
+            >
+              <p>
+                Master’s degree in Information Systems, Computer Science, or closely related field and 1 year of experience in the job offered or closely related position. Experience which may have been obtained concurrently must include 1 year of experience with: maintaining IT and network infrastructure to support fleet maintenance operations for Amazon; and configured and optimized billing systems tied to repair logs, inspection records, and service schedules, ensuring accurate financial and operational reporting.
+              </p>
+            </JobAccordionSection>
+
+            <JobAccordionSection
+              id="salary"
+              title="Salary"
+              open={openSections.salary}
+              onToggle={() => toggleSection('salary')}
+            >
+              <p>$99,195/year</p>
+            </JobAccordionSection>
+
+            <JobAccordionSection
+              id="apply"
+              title="How to Apply"
+              open={openSections.apply}
+              onToggle={() => toggleSection('apply')}
+            >
+              <address>
+                Fares Jamal<br />
+                {company}<br />
+                {streetAddress}<br />
+                Mount Vernon, NY 10552<br />
+                Email: <a href={`mailto:${email}`}>{email}</a><br />
+                Phone: <a href={`tel:${phoneHref}`}>{phone}</a>
+              </address>
+            </JobAccordionSection>
+          </div>
         </article>
       </main>
     </>
+  );
+}
+
+function JobAccordionSection({ id, title, open, onToggle, children }) {
+  return (
+    <section className={`job-panel ${open ? 'is-open' : ''}`}>
+      <button
+        className="job-panel-trigger"
+        type="button"
+        aria-expanded={open}
+        aria-controls={`job-panel-${id}`}
+        onClick={onToggle}
+      >
+        <span>{title}</span>
+        <ChevronUp size={18} aria-hidden="true" />
+      </button>
+      <div className="job-panel-body" id={`job-panel-${id}`} hidden={!open}>
+        {children}
+      </div>
+    </section>
   );
 }
 
