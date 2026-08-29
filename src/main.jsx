@@ -31,8 +31,8 @@ const company = 'Scarsdale Auto Repair, Inc.';
 const city = 'Mount Vernon, NY';
 const streetAddress = '48 West Broad Street';
 const fullAddress = `${streetAddress}, ${city} 10552`;
-const phone = '(929) 214-2748';
-const phoneHref = '+19292142748';
+const phone = '9144828081';
+const phoneHref = '+19144828081';
 const email = 'scarsdaleautorepairinc@gmail.com';
 const postingDate = 'June 14, 2026';
 const basePath = import.meta.env.BASE_URL;
@@ -247,7 +247,7 @@ function HomePage() {
           <h1>{company}</h1>
           <p>
             Professional auto repair, commercial diagnostics, fleet service, and preventive maintenance
-            for businesses operating in and around Mount Vernon, New York.
+            for businesses operating in New York and tristate areas.
           </p>
           <div className="hero-actions">
             <ButtonLink href={routePath('/contact')}>Request Service</ButtonLink>
