@@ -640,9 +640,14 @@ def mark_paid(order_id: int, payload: PaymentPayload | None = None):
 
 
 @app.get("/api/files/{file_name}")
-def get_file(file_name: str):
+def get_file(file_name: str, download: bool = False):
     safe_name = Path(file_name).name
     file_path = UPLOAD_DIR / safe_name
-    if not file_path.exists():
+    if not file_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
+    if download:
+        with db() as conn:
+            media = conn.execute('SELECT original_name FROM media WHERE stored_path = ? ORDER BY id DESC LIMIT 1', (f'uploads/{safe_name}',)).fetchone()
+        name = Path(media['original_name'].replace('\\', '/')).name if media else safe_name
+        return FileResponse(file_path, filename=name or safe_name, content_disposition_type='attachment')
     return FileResponse(file_path)

@@ -12,6 +12,7 @@ import {
   Clock,
   Copy,
   Download,
+  Eye,
   FileText,
   Gauge,
   Mail,
@@ -1364,6 +1365,23 @@ function HistoryTab() {
                       ))}
                     </div>
                   ) : <p className="muted">No approved work recorded.</p>}
+                </section>
+                <section className="history-invoices">
+                  <h4>Uploaded Invoices</h4>
+                  {(visit.media || []).some((item) => item.kind === 'invoice') ? (
+                    (visit.media || []).filter((item) => item.kind === 'invoice').map((invoice) => (
+                      <div className="history-invoice-row" key={invoice.id}>
+                        <div className="history-invoice-name">
+                          <strong>{invoice.original_name}</strong>
+                          <span>Uploaded {formatDate(invoice.uploaded_at)}</span>
+                        </div>
+                        <div className="history-invoice-actions">
+                          <a className="button outline" href={fileUrl(invoice.stored_path)} target="_blank" rel="noreferrer" aria-label={`View invoice ${invoice.original_name}`}><Eye size={18} /> View</a>
+                          <a className="button outline" href={`${fileUrl(invoice.stored_path)}?download=true`} aria-label={`Download invoice ${invoice.original_name}`}><Download size={18} /> Download</a>
+                        </div>
+                      </div>
+                    ))
+                  ) : <p className="muted">No invoice uploaded for this visit.</p>}
                 </section>
               </article>
             ))}

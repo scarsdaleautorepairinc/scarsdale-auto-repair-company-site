@@ -570,6 +570,11 @@ h3 {
   padding: 18px;
 }
 
+.history-invoice-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 0; border-top: 1px solid #d8e1e4; }
+.history-invoice-name { display: grid; gap: 6px; min-width: 0; flex: 1 1 220px; overflow-wrap: anywhere; }
+.history-invoice-name span { color: #52646d; font-size: 0.875rem; }
+.history-invoice-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
 .history-visit-head,
 .history-meta {
   display: flex;
