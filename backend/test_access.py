@@ -1,14 +1,13 @@
 from io import BytesIO
 import unittest
 from unittest.mock import patch
-from fastapi.testclient import TestClient
 from backend.app import access, main
-from backend.test_workflow import WorkflowTest
+from backend import test_workflow
 
 
 class ProductionAccessTest(unittest.TestCase):
     def setUp(self):
-        WorkflowTest.setUp(self)
+        test_workflow.WorkflowTest.setUp(self)
         override = patch.object(access, "PRODUCTION", True)
         override.start()
         self.addCleanup(override.stop)

@@ -6,3 +6,4 @@ _extracted/
 .venv/
 data/
 __pycache__/
+_fleet-deploy/
