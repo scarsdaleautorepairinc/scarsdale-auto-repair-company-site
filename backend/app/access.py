@@ -32,6 +32,8 @@ def require_staff(request: Request):
         raise HTTPException(503, "Staff sign-in is temporarily unavailable.") from exc
     if not isinstance(profile, dict) or profile.get("role") not in STAFF:
         raise HTTPException(403, "Customer Service is available to shop staff only.")
+    if request.url.path.startswith('/api/reports/') and profile['role'] not in OFFICE:
+        raise HTTPException(403, 'Office access is required for income reports.')
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
         if request.headers.get("origin") != SHOP_ORIGIN or request.headers.get("x-shop-request") != "1":
             raise HTTPException(403, "Open Customer Service from the shop website to save changes.")

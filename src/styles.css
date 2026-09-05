@@ -265,7 +265,7 @@ h3 {
 
 .service-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   max-width: 1180px;
   margin: 0 auto 18px;
@@ -505,6 +505,21 @@ h3 {
   display: grid;
   gap: 16px;
 }
+
+.reports-panel { padding: 24px; background: #fff; min-width: 0; }
+.report-controls, .payment-form { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin: 20px 0; }
+.report-controls label, .payment-form label { display: grid; gap: 6px; font-weight: 700; }
+.report-controls input, .payment-form input { padding: 12px; border: 1px solid #bdcfd7; border-radius: 6px; max-width: 100%; color: #14222a; background: #fff; }
+.report-controls .report-period { margin: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 220px; max-width: 100%; }
+.report-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); border-block: 1px solid #d4e0e5; padding: 20px 0; gap: 20px; }
+.report-totals dt { color: #52646d; }
+.report-totals dd { font-size: 1.75rem; font-weight: 800; margin: 8px 0 0; overflow-wrap: anywhere; }
+.report-table-wrap { overflow-x: auto; margin-top: 24px; }
+.report-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.report-table caption { text-align: left; font-weight: 800; font-size: 1.125rem; margin-bottom: 12px; }
+.report-table th, .report-table td { padding: 12px; text-align: left; border-bottom: 1px solid #d4e0e5; overflow-wrap: anywhere; }
+.report-table th, .report-table tfoot { background: #eff5f7; }
+.report-table td:last-child, .report-table th:last-child { text-align: right; }
 
 .history-vehicle,
 .history-visit {

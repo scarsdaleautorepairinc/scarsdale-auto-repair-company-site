@@ -29,6 +29,8 @@ Public company website for Scarsdale Auto Repair, Inc. with one internal Custome
 - Car-ready status for office staff
 - Invoice upload/preparation and paid closeout
 - Vehicle History tab for office staff to search by saved plate or VIN
+- Reports tab for daily/monthly customer visits, paid tickets, income received, and CSV export (America/New_York dates)
+- Mark Paid records the actual amount received once; later estimate edits do not change past income. Older paid tickets with no recorded amount are flagged and excluded until their amount is entered.
 - History results show visit date, mileage, complaint, tech findings, approved work, invoice total, ready date, and paid date
 - Bad-part photo/video uploads
 - SQLite database stored in `data/shop.sqlite3`

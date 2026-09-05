@@ -28,9 +28,11 @@ class ProductionAccessTest(unittest.TestCase):
     def test_staff_csrf_and_office_permissions(self):
         self.client.cookies.set("mvac_session", "fictional")
         with patch.object(access, "urlopen", side_effect=lambda *a, **k: BytesIO(b'{"role":"TECHNICIAN"}')):
+            self.assertEqual(self.client.get('/api/reports/income').status_code, 403)
             self.assertEqual(self.client.get("/api/orders/999999").status_code, 404)
             self.assertEqual(self.client.post("/api/orders/999999/paid").status_code, 403)
             self.assertEqual(self.client.post("/api/orders/999999/paid", headers={"Origin": access.SHOP_ORIGIN, "X-Shop-Request": "1"}).status_code, 403)
         with patch.object(access, "urlopen", side_effect=lambda *a, **k: BytesIO(b'{"role":"ADMIN"}')):
+            self.assertEqual(self.client.get('/api/reports/income').status_code, 200)
             self.assertEqual(self.client.post("/api/orders/999999/paid", headers={"Origin": "https://untrusted.example", "X-Shop-Request": "1"}).status_code, 403)
             self.assertEqual(self.client.post("/api/orders/999999/paid", headers={"Origin": access.SHOP_ORIGIN, "X-Shop-Request": "1"}).status_code, 404)

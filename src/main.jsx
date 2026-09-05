@@ -20,6 +20,7 @@ import {
   Phone,
   Plus,
   Printer,
+  RefreshCw,
   Search,
   Share2,
   ShieldCheck,
@@ -745,7 +746,8 @@ function CustomerServiceWorkspace() {
     ['intake', '1. Customer Form'],
     ['tech', '2. Tech Findings'],
     ['office', '3. Office / Invoice'],
-    ['history', '4. Vehicle History']
+    ['history', '4. Vehicle History'],
+    ['reports', '5. Reports']
   ];
 
   async function loadOrders() {
@@ -824,7 +826,9 @@ function CustomerServiceWorkspace() {
           </section>
         )}
 
-        {activeTab !== 'intake' && activeTab !== 'history' && (
+        {activeTab === 'reports' && <ReportsTab />}
+
+        {activeTab !== 'intake' && activeTab !== 'history' && activeTab !== 'reports' && (
           <section className="service-tab-panel">
             <TicketSelector
               orders={orders}
@@ -1077,9 +1081,11 @@ function OrderDetail({ order, view, onChange, onError }) {
     }
   }
 
-  async function paid() {
+  async function paid(event) {
+    event.preventDefault();
+    const amount = new FormData(event.currentTarget).get('amount');
     try {
-      await api(`/api/orders/${order.id}/paid`, { method: 'POST' });
+      await api(`/api/orders/${order.id}/paid`, { method: 'POST', body: JSON.stringify({ amount }) });
       onChange('Order marked paid.');
     } catch (err) {
       onError(err.message);
@@ -1173,8 +1179,13 @@ function OrderDetail({ order, view, onChange, onError }) {
           </label>
           <button className="button outline" type="button" onClick={() => setStatus('in_progress')}>In Progress</button>
           <button className="button outline" type="button" onClick={() => setStatus('complete')}>Car Ready</button>
-          <button className="button primary" type="button" onClick={paid}>Mark Paid</button>
         </div>
+        {order.paid_amount_cents != null && order.paid_at ? (
+          <p className="form-success">Payment recorded: {money(order.paid_amount_cents / 100)} on {formatDate(order.paid_at)}</p>
+        ) : <form className="payment-form" onSubmit={paid} key={`${order.id}-${order.estimate_total}`}>
+          <label>Amount received ($)<input name="amount" type="number" min="0" max="99999999" step="0.01" defaultValue={Number(order.estimate_total || 0).toFixed(2)} required /></label>
+          <button className="button primary" type="submit"><CheckCircle2 size={18} /> Mark Paid</button>
+        </form>}
         {invoice && <a className="invoice-link" href={fileUrl(invoice.stored_path)} target="_blank" rel="noreferrer"><Download size={18} /> Download invoice: {invoice.original_name}</a>}
         <div className="photo-grid">
           {photos.map((photo) => (
@@ -1184,6 +1195,79 @@ function OrderDetail({ order, view, onChange, onError }) {
       </section>}
     </div>
   );
+}
+
+function ReportsTab() {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const [period, setPeriod] = useState('day');
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedMonth, setSelectedMonth] = useState(today.slice(0, 7));
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const on = period === 'day' ? selectedDate : `${selectedMonth}-01`;
+    setReport(null);
+    setError('');
+    if (!(period === 'day' ? selectedDate : selectedMonth)) return;
+    setLoading(true);
+    api(`/api/reports/income?period=${period}&on=${encodeURIComponent(on)}`)
+      .then((data) => { if (!cancelled) setReport(data); })
+      .catch((err) => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [period, selectedDate, selectedMonth, refresh]);
+
+  function exportCsv() {
+    const rows = [['Date (New York)', 'Customer visits', 'Paid tickets', 'Income received (USD)', 'Missing payment amounts'],
+      ...report.days.map((day) => [day.date, day.visits, day.paid_tickets, (day.income_cents / 100).toFixed(2), day.missing_amounts]),
+      ['Total', report.totals.visits, report.totals.paid_tickets, (report.totals.income_cents / 100).toFixed(2), report.totals.missing_amounts]];
+    const url = URL.createObjectURL(new Blob([rows.map((row) => row.join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `income-${report.start}-${report.end}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  return <section className="service-tab-panel reports-panel">
+    <div className="panel-heading"><h2>Income Reports</h2><span>New York time</span></div>
+    <div className="report-controls">
+      <div className="service-tabs report-period" role="group" aria-label="Report period">
+        <button type="button" className={period === 'day' ? 'is-active' : ''} aria-pressed={period === 'day'} onClick={() => setPeriod('day')}>Daily</button>
+        <button type="button" className={period === 'month' ? 'is-active' : ''} aria-pressed={period === 'month'} onClick={() => setPeriod('month')}>Monthly</button>
+      </div>
+      {period === 'day' ? <label>Report date<input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label>
+        : <label>Report month<input type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} /></label>}
+      <button className="button outline" type="button" disabled={loading} onClick={() => setRefresh((value) => value + 1)} aria-label="Refresh report" title="Refresh report"><RefreshCw size={18} /></button>
+      <button className="button outline" type="button" disabled={!report || loading} onClick={exportCsv}><Download size={18} /> Export CSV</button>
+    </div>
+    {loading && <p role="status">Loading report...</p>}
+    {error && <p className="form-error" role="alert">{error}</p>}
+    {report && <>
+      <dl className="report-totals">
+        <div><dt>Customer visits</dt><dd>{report.totals.visits}</dd></div>
+        <div><dt>Paid tickets</dt><dd>{report.totals.paid_tickets}</dd></div>
+        <div><dt>Income received</dt><dd>{money(report.totals.income_cents / 100)}</dd></div>
+      </dl>
+      {report.totals.missing_amounts > 0 && <p className="form-error">{report.totals.missing_amounts} paid ticket(s) have no recorded payment amount and are excluded from income.</p>}
+      {period === 'month' && <div className="report-table-wrap"><table className="report-table">
+        <caption>Daily Breakdown</caption><thead><tr><th>Date</th><th>Customer visits</th><th>Paid tickets</th><th>Income received</th></tr></thead>
+        <tbody>{report.days.map((day) => <tr key={day.date}><td>{day.date}</td><td>{day.visits}</td><td>{day.paid_tickets}</td><td>{money(day.income_cents / 100)}{day.missing_amounts > 0 && ' *'}</td></tr>)}</tbody>
+        <tfoot><tr><th>Total</th><td>{report.totals.visits}</td><td>{report.totals.paid_tickets}</td><td>{money(report.totals.income_cents / 100)}</td></tr></tfoot>
+      </table></div>}
+      <div className="report-table-wrap"><table className="report-table">
+        <caption>Payments Received</caption><thead><tr><th>Date</th><th>Ticket</th><th>Customer</th><th>Plate</th><th>Amount received</th></tr></thead>
+        <tbody>{report.payments.length ? report.payments.map((payment) => <tr key={payment.id}><td>{payment.date}</td><td>#{payment.id}</td><td>{payment.customer_name}</td><td>{payment.plate || '-'}</td><td>{payment.paid_amount_cents == null ? 'Not recorded' : money(payment.paid_amount_cents / 100)}</td></tr>) : <tr><td colSpan="5">No payments recorded for this period.</td></tr>}</tbody>
+      </table></div>
+      <div className="report-table-wrap"><table className="report-table">
+        <caption>Customer Visits</caption><thead><tr><th>Date</th><th>Ticket</th><th>Customer</th><th>Plate</th></tr></thead>
+        <tbody>{report.visits.length ? report.visits.map((visit) => <tr key={visit.id}><td>{visit.date}</td><td>#{visit.id}</td><td>{visit.customer_name}</td><td>{visit.plate || '-'}</td></tr>) : <tr><td colSpan="4">No customer visits for this period.</td></tr>}</tbody>
+      </table></div>
+    </>}
+  </section>;
 }
 
 function HistoryTab() {

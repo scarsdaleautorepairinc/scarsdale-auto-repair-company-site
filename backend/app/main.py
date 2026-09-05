@@ -1,4 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal, ROUND_HALF_UP
+from typing import Literal
 from pathlib import Path
 from uuid import uuid4
 import sqlite3
@@ -10,9 +12,10 @@ from urllib.request import urlopen
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from backend.app.access import require_staff
+from backend.app.reports import income_report, SHOP_TIMEZONE
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -132,6 +135,10 @@ def init_db():
         order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(repair_orders)")}
         if "ready_at" not in order_columns:
             conn.execute("ALTER TABLE repair_orders ADD COLUMN ready_at TEXT")
+        if "paid_amount_cents" not in order_columns:
+            conn.execute("ALTER TABLE repair_orders ADD COLUMN paid_amount_cents INTEGER")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_created ON repair_orders(created_at)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_paid ON repair_orders(paid_at)")
 
 
 @app.on_event("startup")
@@ -173,6 +180,17 @@ class EstimateItemPayload(BaseModel):
 class StatusPayload(BaseModel):
     status: str
     completion_time: str | None = None
+
+
+class PaymentPayload(BaseModel):
+    amount: Decimal = Field(ge=0, le=99999999, decimal_places=2)
+
+
+@app.get('/api/reports/income')
+def report_income(period: Literal['day', 'month'] = 'day', on: date | None = None):
+    with db() as conn:
+        conn.execute('BEGIN')
+        return income_report(conn, period, on or datetime.now(SHOP_TIMEZONE).date())
 
 
 def nhtsa_value(results, variable):
@@ -604,13 +622,19 @@ def upload_file(
 
 
 @app.post("/api/orders/{order_id}/paid")
-def mark_paid(order_id: int):
+def mark_paid(order_id: int, payload: PaymentPayload | None = None):
     updated = now_iso()
     with db() as conn:
-        fetch_order(conn, order_id)
+        conn.execute('BEGIN IMMEDIATE')
+        order = fetch_order(conn, order_id)
+        if order['paid_amount_cents'] is not None and order['paid_at']:
+            return order
+        amount = payload.amount if payload else Decimal(str(order['estimate_total'])).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        if not amount.is_finite() or amount < 0:
+            raise HTTPException(400, 'Enter a valid payment amount')
         conn.execute(
-            "UPDATE repair_orders SET status = ?, paid_at = ?, updated_at = ? WHERE id = ?",
-            ("paid", updated, updated, order_id),
+            "UPDATE repair_orders SET status = ?, paid_at = COALESCE(paid_at, ?), paid_amount_cents = ?, updated_at = ? WHERE id = ?",
+            ("paid", updated, int(amount * 100), updated, order_id),
         )
         return fetch_order(conn, order_id)
 
