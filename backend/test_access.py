@@ -3,12 +3,12 @@ import unittest
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 from backend.app import access, main
+from backend.test_workflow import WorkflowTest
 
 
 class ProductionAccessTest(unittest.TestCase):
     def setUp(self):
-        self.client = TestClient(main.app)
-        self.addCleanup(self.client.close)
+        WorkflowTest.setUp(self)
         override = patch.object(access, "PRODUCTION", True)
         override.start()
         self.addCleanup(override.stop)
