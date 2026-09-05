@@ -1,5 +1,16 @@
 # Deployment
 
+## Customer Service Backend
+
+The customer-service workspace is hosted on the Fleet Solutions server at
+https://fleettsolutions.com/repair-shop/customer-service and uses Fleet staff sign-in.
+Its Python backend and SQLite/uploads folder are isolated from Fleet's PostgreSQL database.
+See [Fleet deployment details](infra/fleet-solutions/README.md) for paths, test results,
+deployment workflow, and remaining backup coverage.
+
+The public website's `VITE_CUSTOMER_SERVICE_URL` GitHub Actions variable connects the
+Customer Service entry to this workspace. GitHub Pages hosts the public website only.
+
 This repository is configured to deploy automatically to GitHub Pages with GitHub Actions.
 
 ## Step 1: Push Repository To GitHub
