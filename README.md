@@ -1,6 +1,6 @@
 # Scarsdale Auto Repair, Inc. Website
 
-Standalone public company website for Scarsdale Auto Repair, Inc. This project is intentionally separate from any fleet, inventory, admin, login, or database-backed system.
+Public company website for Scarsdale Auto Repair, Inc. with one internal Customer Service page for walk-in complaint workflow.
 
 ## Pages
 
@@ -8,9 +8,8 @@ Standalone public company website for Scarsdale Auto Repair, Inc. This project i
 - About Us at `/about`
 - Services at `/services`
 - Careers at `/careers`
+- Customer Service at `/customer-service`
 - Contact at `/contact`
-
-The Careers page includes a formal, printable public job posting for a Systems Administrator position in Mount Vernon, NY.
 
 ## Features
 
@@ -19,12 +18,31 @@ The Careers page includes a formal, printable public job posting for a Systems A
 - Detailed services page with organized service cards
 - Public Careers page with printable PERM-friendly job posting layout
 - Contact form with client-side confirmation message
-- FAQ, testimonials, SEO metadata, favicon, robots.txt, sitemap.xml, and GitHub Pages deployment workflow
+- Digital Customer Service workflow for staff
+- Customer intake and work authorization
+- Customer, vehicle, plate, VIN, mileage, service request, concern, and diagnostic fee capture
+- VIN decoding through the public NHTSA decoder when a VIN is entered
+- Plate lookup placeholder for a future licensed DMV/plate data provider integration
+- Customer ticket list and status tracking
+- Technician finding notes with bad-part photo/video uploads
+- Office review screen to show customer the tech concern
+- Car-ready status for office staff
+- Invoice upload/preparation and paid closeout
+- Vehicle History tab for office staff to search by saved plate or VIN
+- History results show visit date, mileage, complaint, tech findings, approved work, invoice total, ready date, and paid date
+- Bad-part photo/video uploads
+- SQLite database stored in `data/shop.sqlite3`
+- Uploaded files stored in `data/uploads`
 
 ## Setup
 
 ```bash
 npm install
+```
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\pip install -r backend\requirements.txt
 ```
 
 ## Development
@@ -34,6 +52,16 @@ npm run dev
 ```
 
 The development server will print a local URL, usually `http://localhost:5173`.
+
+In a second terminal, start the backend:
+
+```bash
+.\.venv\Scripts\python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8001
+```
+
+Then open:
+
+- Customer Service: `http://localhost:5173/customer-service`
 
 ## Production Build
 
@@ -58,15 +86,6 @@ For other static hosts, use:
 - Build command: `npm run build`
 - Publish directory: `dist`
 
-Because `/careers` is handled by the React static app, configure the host to route unknown paths back to `index.html` if required by the platform.
+Because the app has React routes, configure the host to route unknown paths back to `index.html` if required by the platform.
 
-## Updating the Careers Posting
-
-Edit `src/main.jsx` to update:
-
-- Company email placeholder
-- Phone placeholder
-- Posting date
-- Job duties
-- Requirements
-- Application instructions
+The backend should be deployed separately on a Python-capable host. For production, set `VITE_API_BASE` to the backend URL before building the frontend.

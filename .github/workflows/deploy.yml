@@ -34,13 +34,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Test customer service workflow
+        run: |
+          pip install -r backend/requirements.txt httpx==0.28.1
+          python -m unittest discover -s backend -p 'test_*.py' -v
+
       - name: Build
+        env:
+          VITE_CUSTOMER_SERVICE_URL: ${{ vars.VITE_CUSTOMER_SERVICE_URL }}
         run: npm run build
 
       - name: Add SPA fallback
         run: |
           cp dist/index.html dist/404.html
-          for route in about services careers contact; do
+          for route in about services careers contact customer-service; do
             mkdir -p "dist/$route"
             cp dist/index.html "dist/$route/index.html"
           done

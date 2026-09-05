@@ -1,0 +1,28 @@
+# Run on the Fleet Solutions host; do not add this to mvac_backend's compose project.
+services:
+  repair-shop:
+    image: ${SHOP_IMAGE:?Set SHOP_IMAGE to the tested immutable image tag}
+    container_name: scarsdale_repair_shop
+    network_mode: host
+    restart: unless-stopped
+    command: ["uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", "8091"]
+    environment:
+      SHOP_ENV: production
+      SHOP_DATA_DIR: /data
+      FLEET_AUTH_URL: http://127.0.0.1:8080/api/me
+      SHOP_ORIGIN: https://fleettsolutions.com
+      SHOP_ALLOWED_ORIGINS: https://fleettsolutions.com
+    volumes:
+      - /var/lib/fleet-solutions/repair-shop:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8091/api/health', timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
