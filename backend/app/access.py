@@ -33,17 +33,12 @@ def require_staff(request: Request):
         raise HTTPException(503, "Staff sign-in is temporarily unavailable.") from exc
     if not isinstance(profile, dict) or not profile.get("id"):
         raise HTTPException(403, "A verified Fleet account is required.")
-    from backend.app.main import db
-    with db() as conn:
-        member = conn.execute("SELECT role FROM shop_members WHERE fleet_user_id = ?", (str(profile['id']),)).fetchone()
-    role = "SHOP_ADMIN" if profile.get("role") == "ADMIN" else (member['role'] if member else None)
+    role = {'ADMIN': 'SHOP_ADMIN', 'SHOP_MECHANIC': 'SHOP_MECHANIC', 'SHOP_OFFICE': 'SHOP_OFFICE'}.get(profile.get('role'))
     request.state.shop = {"id": str(profile['id']), "name": profile.get('name', ''), "role": role}
     if request.url.path == '/api/session' and request.method == 'GET':
         return
     if not role:
-        raise HTTPException(403, "Ask a shop administrator to assign your shop role.")
-    if request.url.path.startswith('/api/shop-members') and role != 'SHOP_ADMIN':
-        raise HTTPException(403, 'Administrator access is required.')
+        raise HTTPException(403, "A Fleet Shop Mechanic or Shop Office Staff account is required.")
     if request.url.path.startswith('/api/reports/') and role == 'SHOP_MECHANIC':
         raise HTTPException(403, 'Office access is required for income reports.')
     if request.method not in {"GET", "HEAD", "OPTIONS"}:

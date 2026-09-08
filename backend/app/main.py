@@ -199,40 +199,9 @@ class PaymentPayload(BaseModel):
     amount: Decimal = Field(ge=0, le=99999999, decimal_places=2)
 
 
-class ShopMemberPayload(BaseModel):
-    role: Literal['SHOP_MECHANIC', 'SHOP_OFFICE']
-
-
 @app.get('/api/session')
 def shop_session(request: Request):
     return request.state.shop
-
-
-@app.get('/api/shop-members')
-def shop_members():
-    with db() as conn:
-        return [dict(row) for row in conn.execute('SELECT * FROM shop_members ORDER BY fleet_user_id')]
-
-
-@app.put('/api/shop-members/{user_id}')
-def save_shop_member(user_id: int, payload: ShopMemberPayload, request: Request):
-    if user_id <= 0:
-        raise HTTPException(400, 'Fleet account ID must be positive.')
-    with db() as conn:
-        conn.execute('INSERT INTO shop_members VALUES (?, ?, ?, ?) ON CONFLICT(fleet_user_id) DO UPDATE SET role=excluded.role, updated_by=excluded.updated_by, updated_at=excluded.updated_at',
-                     (str(user_id), payload.role, request.state.shop['id'], now_iso()))
-        conn.execute('INSERT INTO shop_membership_events (fleet_user_id, role, actor, created_at) VALUES (?, ?, ?, ?)',
-                     (str(user_id), payload.role, request.state.shop['id'], now_iso()))
-    return {'saved': True}
-
-
-@app.delete('/api/shop-members/{user_id}')
-def revoke_shop_member(user_id: int, request: Request):
-    with db() as conn:
-        conn.execute('DELETE FROM shop_members WHERE fleet_user_id = ?', (str(user_id),))
-        conn.execute('INSERT INTO shop_membership_events (fleet_user_id, role, actor, created_at) VALUES (?, NULL, ?, ?)',
-                     (str(user_id), request.state.shop['id'], now_iso()))
-    return {'removed': True}
 
 
 @app.get('/api/reports/income')

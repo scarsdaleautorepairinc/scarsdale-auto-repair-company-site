@@ -29,7 +29,7 @@ class ProductionAccessTest(unittest.TestCase):
         self.client.cookies.set("mvac_session", "fictional")
         with main.db() as conn:
             conn.execute("INSERT INTO shop_members VALUES ('2', 'SHOP_MECHANIC', '1', '2026-09-08')")
-        with patch.object(access, "urlopen", side_effect=lambda *a, **k: BytesIO(b'{"id":2,"role":"TECHNICIAN"}')):
+        with patch.object(access, "urlopen", side_effect=lambda *a, **k: BytesIO(b'{"id":2,"role":"SHOP_MECHANIC"}')):
             self.assertEqual(self.client.get('/api/reports/income').status_code, 403)
             self.assertEqual(self.client.get("/api/orders/999999").status_code, 404)
             self.assertEqual(self.client.post("/api/orders/999999/paid").status_code, 403)
@@ -39,35 +39,28 @@ class ProductionAccessTest(unittest.TestCase):
             self.assertEqual(self.client.post("/api/orders/999999/paid", headers={"Origin": "https://untrusted.example", "X-Shop-Request": "1"}).status_code, 403)
             self.assertEqual(self.client.post("/api/orders/999999/paid", headers={"Origin": access.SHOP_ORIGIN, "X-Shop-Request": "1"}).status_code, 404)
 
-    def test_membership_grant_change_and_revoke_without_fleet_changes(self):
+    def test_fleet_roles_are_authoritative_and_legacy_assignments_cannot_grant_access(self):
         self.client.cookies.set('mvac_session', 'fictional')
         headers = {'Origin': access.SHOP_ORIGIN, 'X-Shop-Request': '1'}
         identity = {'id': 2, 'role': 'TECHNICIAN'}
+        with main.db() as conn:
+            conn.execute("INSERT INTO shop_members VALUES ('2', 'SHOP_OFFICE', '1', '2026-09-08')")
         import json
         with patch.object(access, 'urlopen', side_effect=lambda *a, **k: BytesIO(json.dumps(identity).encode())):
             self.assertEqual(self.client.get('/api/session').json()['role'], None)
             self.assertEqual(self.client.get('/api/orders').status_code, 403)
-            identity.update(id=1, role='ADMIN')
-            self.assertEqual(self.client.put('/api/shop-members/2', headers=headers, json={'role': 'SHOP_MECHANIC'}).status_code, 200)
-            self.assertEqual(self.client.put('/api/shop-members/3', headers=headers, json={'role': 'SHOP_ADMIN'}).status_code, 422)
-            identity.update(id=2, role='TECHNICIAN')
+            identity.update(role='SHOP_MECHANIC')
             self.assertEqual(self.client.get('/api/session').json()['role'], 'SHOP_MECHANIC')
             self.assertEqual(self.client.get('/api/orders').status_code, 200)
             for path in ('/api/intake', '/api/orders/1/approve', '/api/orders/1/paid', '/api/orders/1/estimate-items'):
                 self.assertEqual(self.client.post(path, headers=headers, json={}).status_code, 403)
-            self.assertEqual(self.client.put('/api/shop-members/2', headers=headers, json={'role': 'SHOP_OFFICE'}).status_code, 403)
+            self.assertEqual(self.client.put('/api/shop-members/2', headers=headers, json={'role': 'SHOP_OFFICE'}).status_code, 404)
             self.assertEqual(self.client.post('/api/orders/1/upload', headers=headers, data={'kind': 'invoice'}, files={'file': ('invoice.pdf', b'test')}).status_code, 403)
             self.assertEqual(self.client.patch('/api/orders/1/status', headers=headers, json={'status': 'paid'}).status_code, 422)
             self.assertEqual(self.client.post('/api/orders/1/inspection', headers=headers, json={'status': 'approved'}).status_code, 422)
-            identity.update(id=1, role='ADMIN')
-            self.assertEqual(self.client.put('/api/shop-members/2', headers=headers, json={'role': 'SHOP_OFFICE'}).status_code, 200)
-            identity.update(id=2, role='TECHNICIAN')
+            identity.update(role='SHOP_OFFICE')
             self.assertEqual(self.client.get('/api/reports/income').status_code, 200)
-            self.assertEqual(self.client.get('/api/shop-members').status_code, 403)
+            self.assertEqual(self.client.get('/api/shop-members').status_code, 404)
             self.assertEqual(self.client.post('/api/orders/9999/paid', headers=headers).status_code, 404)
-            identity.update(id=1, role='ADMIN')
-            self.assertEqual(self.client.delete('/api/shop-members/2', headers=headers).status_code, 200)
-            identity.update(id=2, role='TECHNICIAN')
+            identity.update(role='TECHNICIAN')
             self.assertEqual(self.client.get('/api/orders').status_code, 403)
-        with main.db() as conn:
-            self.assertEqual(conn.execute('SELECT COUNT(*) FROM shop_membership_events').fetchone()[0], 3)

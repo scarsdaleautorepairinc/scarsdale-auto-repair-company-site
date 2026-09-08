@@ -16,6 +16,7 @@ import {
   FileText,
   Gauge,
   Mail,
+  LogOut,
   MapPin,
   Menu,
   Phone,
@@ -748,9 +749,8 @@ function CustomerServiceWorkspace() {
     ['tech', '2. Tech Findings'],
     ['office', '3. Office / Invoice'],
     ['history', '4. Vehicle History'],
-    ['reports', '5. Reports'],
-    ['staff', 'Staff Access']
-  ].filter(([key]) => session && (key === 'staff' ? session.role === 'SHOP_ADMIN' : session.role === 'SHOP_MECHANIC' ? key === 'tech' : Boolean(session.role)));
+    ['reports', '5. Reports']
+  ].filter(([key]) => session && (session.role === 'SHOP_MECHANIC' ? key === 'tech' : Boolean(session.role)));
 
   async function loadOrders() {
     setLoading(true);
@@ -769,6 +769,7 @@ function CustomerServiceWorkspace() {
   }
 
   useEffect(() => {
+    document.title = 'Repair Shop | Fleet Solutions';
     api('/api/session').then(async (profile) => {
       setSession(profile);
       if (!profile.role) { setLoading(false); return; }
@@ -793,16 +794,25 @@ function CustomerServiceWorkspace() {
 
   if (!session?.role) return <main className="section">
     <h1>Shop Access</h1>
-    {error ? <p className="form-error">{error}</p> : <p>{session ? `Access pending. Fleet account ID: ${session.id}` : 'Checking sign-in...'}</p>}
-    {session && <p>Ask your administrator to assign your shop role.</p>}
+    {error ? <p className="form-error">{error}</p> : <p>{session ? 'A Shop Mechanic or Shop Office Staff account is required.' : 'Checking sign-in...'}</p>}
     <a href="https://fleettsolutions.com/">Fleet Solutions Sign In</a>
   </main>;
 
   return (
     <>
-      <PageTitle eyebrow="Customer Service" title="Walk-In Complaint Workflow">
-        Customer authorization, technician findings, office review, car-ready status, invoice preparation, and payment closeout.
-      </PageTitle>
+      <header className="shop-topbar">
+        <div><h1>Repair Shop</h1><span>{session.name} | {session.role === 'SHOP_MECHANIC' ? 'Shop Mechanic' : session.role === 'SHOP_OFFICE' ? 'Shop Office Staff' : 'Administrator'}</span></div>
+        <nav aria-label="Workspace account">
+          {session.role === 'SHOP_ADMIN' && <a className="button outline" href="https://fleettsolutions.com/">Fleet Dashboard</a>}
+          <button className="button outline" onClick={async () => {
+            try {
+              const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              if (!response.ok) throw new Error('Sign out failed. Please try again.');
+              window.location.assign('https://fleettsolutions.com/');
+            } catch (err) { setError(err.message); }
+          }}><LogOut size={18} />Sign Out</button>
+        </nav>
+      </header>
       <main className="shop-shell">
         <div className="service-tabs" role="tablist" aria-label="Customer service workflow">
           {tabs.map(([key, label]) => (
@@ -841,7 +851,6 @@ function CustomerServiceWorkspace() {
         )}
 
         {activeTab === 'reports' && <ReportsTab />}
-        {activeTab === 'staff' && <ShopStaffTab />}
 
         {['tech', 'office'].includes(activeTab) && (
           <section className="service-tab-panel">
@@ -867,44 +876,6 @@ function CustomerServiceWorkspace() {
       </main>
     </>
   );
-}
-
-function ShopStaffTab() {
-  const [members, setMembers] = useState([]);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const refresh = () => api('/api/shop-members').then(setMembers);
-  useEffect(() => { refresh().catch(err => setError(err.message)); }, []);
-  async function save(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    setBusy(true); setError('');
-    try {
-      await api(`/api/shop-members/${data.get('user_id')}`, { method: 'PUT', body: JSON.stringify({ role: data.get('role') }) });
-      await refresh(); form.reset();
-    } catch (err) { setError(err.message); }
-    finally { setBusy(false); }
-  }
-  async function revoke(id) {
-    if (!window.confirm(`Revoke shop access for Fleet account ${id}?`)) return;
-    setBusy(true); setError('');
-    try { await api(`/api/shop-members/${id}`, { method: 'DELETE' }); await refresh(); }
-    catch (err) { setError(err.message); }
-    finally { setBusy(false); }
-  }
-  return <section className="service-tab-panel staff-access">
-    <h2>Shop Staff Access</h2>
-    {error && <p className="form-error">{error}</p>}
-    <form className="shop-form" onSubmit={save}>
-      <label>Fleet account ID<input name="user_id" type="number" min="1" step="1" required /></label>
-      <label>Shop role<select name="role"><option value="SHOP_MECHANIC">Shop Mechanic</option><option value="SHOP_OFFICE">Shop Office Staff</option></select></label>
-      <button className="button primary" disabled={busy} type="submit"><Plus size={18} />Save Access</button>
-    </form>
-    <div className="report-table-wrap"><table className="report-table"><thead><tr><th>Fleet account ID</th><th>Shop role</th><th>Access</th></tr></thead>
-      <tbody>{members.map(member => <tr key={member.fleet_user_id}><td>{member.fleet_user_id}</td><td>{member.role === 'SHOP_MECHANIC' ? 'Shop Mechanic' : 'Shop Office Staff'}</td><td><button disabled={busy} type="button" onClick={() => revoke(member.fleet_user_id)}>Revoke</button></td></tr>)}</tbody>
-    </table></div>
-  </section>;
 }
 
 function TicketSelector({ orders, selectedId, loading, onSelect }) {
@@ -1609,6 +1580,10 @@ function App() {
     };
   }, []);
 
+  if (import.meta.env.DEV && ['/customer-service', '/shop'].includes(activePath)) {
+    return <CustomerServiceWorkspace />;
+  }
+
   return (
     <div>
       <Header activePath={activePath} />
@@ -1621,6 +1596,6 @@ function App() {
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    {import.meta.env.VITE_API_BASE ? <CustomerServiceWorkspace /> : <App />}
   </React.StrictMode>
 );
