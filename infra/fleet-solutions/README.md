@@ -12,11 +12,17 @@ Build the backend from the repository root with `docker build -f backend/Dockerf
 
 For the Fleet-hosted frontend, build with `VITE_API_BASE=/repair-shop` and `npm run build -- --base=/repair-shop/`. Serve that build under `/var/www/repair-shop`; the workspace route is `/repair-shop/customer-service`. Do not overwrite Fleet's existing `/var/www/html` frontend.
 
-The backend delegates authentication to Fleet's existing `/api/me` endpoint using the HttpOnly Fleet session cookie. Login remains at Fleet Solutions. External DSP accounts are denied. Unsafe requests require a matching Origin and the custom request header. Approvals and payments require an office role. The development clear-data endpoint is disabled in production. The frontend and backend must be on the same Fleet origin for this cookie-based setup.
+The backend delegates authentication to Fleet's existing `/api/me` endpoint using the HttpOnly Fleet session cookie. Login remains at Fleet Solutions. Fleet ADMIN accounts administer shop access; every other account needs an explicit shop membership, keyed by the verified Fleet account ID. Memberships and their change history live only in the shop SQLite database. Existing Fleet roles, permissions, registration, login routing, and PostgreSQL are unchanged. Unsafe requests require a matching Origin and the custom request header. The development clear-data endpoint is disabled in production.
 
-## Enable Website Entry
+## Shop Staff Onboarding
 
-After the protected service has been deployed and checked, set the Scarsdale repository variable `VITE_CUSTOMER_SERVICE_URL` to `https://fleettsolutions.com/repair-shop/customer-service`, then deploy the website. The website build deliberately has no localhost API fallback in production and displays an unavailable notice until this connection is configured.
+1. Staff sign in through the existing Fleet portal, then bookmark/open https://fleettsolutions.com/repair-shop/customer-service. There is no new automatic redirect or registration flow.
+2. Unassigned accounts see Access pending and their Fleet account ID. They give that ID to an administrator through a trusted channel.
+3. A Fleet ADMIN opens the shop's Staff Access tab and assigns Shop Mechanic or Shop Office Staff to that ID. Verify the account owner before granting access.
+4. Staff refresh the workspace. Mechanics land on Tech Findings; office staff have intake, tech, invoice, history, and report tabs. Mechanics cannot create intake, approve work, upload invoices, record payments, manage memberships, or view income reports. Backend checks enforce these restrictions even for direct API calls.
+5. Administrators can change or revoke shop membership immediately. Each change is retained in shop_membership_events. This does not revoke or change any access Fleet itself grants that account.
+
+The public Scarsdale build no longer links to this workspace. VITE_CUSTOMER_SERVICE_URL is no longer used. The Fleet-hosted build still uses VITE_API_BASE=/repair-shop. Local development bypasses authentication and must never be exposed publicly; production requires SHOP_ENV=production.
 
 ## Required Deployment Checks
 

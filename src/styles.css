@@ -348,6 +348,10 @@ h3 {
   padding: 5px 10px;
 }
 
+.staff-access .shop-form { margin: 20px 0; max-width: 800px; }
+.staff-access select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #cdd8dc; border-radius: 6px; background: #fff; color: #172026; }
+.staff-access .shop-form button { align-self: end; }
+
 .shop-form,
 .mini-form,
 .portal-search {

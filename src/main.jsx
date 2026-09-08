@@ -45,6 +45,7 @@ const email = 'scarsdaleautorepairinc@gmail.com';
 const postingDate = 'June 14, 2026';
 const basePath = import.meta.env.BASE_URL;
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://127.0.0.1:8001' : '');
+const SHOP_ENABLED = import.meta.env.DEV || Boolean(import.meta.env.VITE_API_BASE);
 const businessHours = [
   'Monday - Friday: 8:00 AM - 6:00 PM',
   'Saturday: By Appointment',
@@ -248,7 +249,7 @@ const navItems = [
   { label: 'About', href: routePath('/about'), path: '/about' },
   { label: 'Services', href: routePath('/services'), path: '/services' },
   { label: 'Careers', href: routePath('/careers'), path: '/careers' },
-  { label: 'Customer Service', href: routePath('/customer-service'), path: '/customer-service' },
+  ...(SHOP_ENABLED ? [{ label: 'Customer Service', href: routePath('/customer-service'), path: '/customer-service' }] : []),
   { label: 'Contact', href: routePath('/contact'), path: '/contact' }
 ];
 
@@ -310,7 +311,7 @@ function HomePage() {
           <div className="hero-actions">
             <ButtonLink href={routePath('/contact')}>Request Service</ButtonLink>
             <ButtonLink href={routePath('/careers')} variant="secondary">View Careers</ButtonLink>
-            <ButtonLink href={routePath('/customer-service')} variant="ghost">Customer Service</ButtonLink>
+            {SHOP_ENABLED && <ButtonLink href={routePath('/customer-service')} variant="ghost">Customer Service</ButtonLink>}
             <ButtonLink href={routePath('/contact')} variant="ghost">Contact Us</ButtonLink>
           </div>
         </div>
@@ -727,15 +728,14 @@ function CustomerServicePage() {
   if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE) {
     return <main className="section">
       <h1>Customer Service</h1>
-      {import.meta.env.VITE_CUSTOMER_SERVICE_URL ? (
-        <ButtonLink href={import.meta.env.VITE_CUSTOMER_SERVICE_URL}>Open Customer Service</ButtonLink>
-      ) : <p>Customer Service is not available online yet. Please contact the shop.</p>}
+      <ButtonLink href={routePath('/contact')}>Contact the Shop</ButtonLink>
     </main>;
   }
   return <CustomerServiceWorkspace />;
 }
 
 function CustomerServiceWorkspace() {
+  const [session, setSession] = useState(null);
   const [orders, setOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -748,8 +748,9 @@ function CustomerServiceWorkspace() {
     ['tech', '2. Tech Findings'],
     ['office', '3. Office / Invoice'],
     ['history', '4. Vehicle History'],
-    ['reports', '5. Reports']
-  ];
+    ['reports', '5. Reports'],
+    ['staff', 'Staff Access']
+  ].filter(([key]) => session && (key === 'staff' ? session.role === 'SHOP_ADMIN' : session.role === 'SHOP_MECHANIC' ? key === 'tech' : Boolean(session.role)));
 
   async function loadOrders() {
     setLoading(true);
@@ -768,8 +769,13 @@ function CustomerServiceWorkspace() {
   }
 
   useEffect(() => {
-    loadOrders().catch((err) => {
-      setError(`Backend unavailable: ${err.message}`);
+    api('/api/session').then(async (profile) => {
+      setSession(profile);
+      if (!profile.role) { setLoading(false); return; }
+      if (profile.role === 'SHOP_MECHANIC') setActiveTab('tech');
+      await loadOrders();
+    }).catch((err) => {
+      setError(err.message);
       setLoading(false);
     });
   }, []);
@@ -784,6 +790,13 @@ function CustomerServiceWorkspace() {
     await loadOrders();
     await loadSelected(orderId);
   }
+
+  if (!session?.role) return <main className="section">
+    <h1>Shop Access</h1>
+    {error ? <p className="form-error">{error}</p> : <p>{session ? `Access pending. Fleet account ID: ${session.id}` : 'Checking sign-in...'}</p>}
+    {session && <p>Ask your administrator to assign your shop role.</p>}
+    <a href="https://fleettsolutions.com/">Fleet Solutions Sign In</a>
+  </main>;
 
   return (
     <>
@@ -828,8 +841,9 @@ function CustomerServiceWorkspace() {
         )}
 
         {activeTab === 'reports' && <ReportsTab />}
+        {activeTab === 'staff' && <ShopStaffTab />}
 
-        {activeTab !== 'intake' && activeTab !== 'history' && activeTab !== 'reports' && (
+        {['tech', 'office'].includes(activeTab) && (
           <section className="service-tab-panel">
             <TicketSelector
               orders={orders}
@@ -853,6 +867,44 @@ function CustomerServiceWorkspace() {
       </main>
     </>
   );
+}
+
+function ShopStaffTab() {
+  const [members, setMembers] = useState([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const refresh = () => api('/api/shop-members').then(setMembers);
+  useEffect(() => { refresh().catch(err => setError(err.message)); }, []);
+  async function save(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setBusy(true); setError('');
+    try {
+      await api(`/api/shop-members/${data.get('user_id')}`, { method: 'PUT', body: JSON.stringify({ role: data.get('role') }) });
+      await refresh(); form.reset();
+    } catch (err) { setError(err.message); }
+    finally { setBusy(false); }
+  }
+  async function revoke(id) {
+    if (!window.confirm(`Revoke shop access for Fleet account ${id}?`)) return;
+    setBusy(true); setError('');
+    try { await api(`/api/shop-members/${id}`, { method: 'DELETE' }); await refresh(); }
+    catch (err) { setError(err.message); }
+    finally { setBusy(false); }
+  }
+  return <section className="service-tab-panel staff-access">
+    <h2>Shop Staff Access</h2>
+    {error && <p className="form-error">{error}</p>}
+    <form className="shop-form" onSubmit={save}>
+      <label>Fleet account ID<input name="user_id" type="number" min="1" step="1" required /></label>
+      <label>Shop role<select name="role"><option value="SHOP_MECHANIC">Shop Mechanic</option><option value="SHOP_OFFICE">Shop Office Staff</option></select></label>
+      <button className="button primary" disabled={busy} type="submit"><Plus size={18} />Save Access</button>
+    </form>
+    <div className="report-table-wrap"><table className="report-table"><thead><tr><th>Fleet account ID</th><th>Shop role</th><th>Access</th></tr></thead>
+      <tbody>{members.map(member => <tr key={member.fleet_user_id}><td>{member.fleet_user_id}</td><td>{member.role === 'SHOP_MECHANIC' ? 'Shop Mechanic' : 'Shop Office Staff'}</td><td><button disabled={busy} type="button" onClick={() => revoke(member.fleet_user_id)}>Revoke</button></td></tr>)}</tbody>
+    </table></div>
+  </section>;
 }
 
 function TicketSelector({ orders, selectedId, loading, onSelect }) {

@@ -10,7 +10,7 @@ import os
 from urllib.parse import quote
 from urllib.request import urlopen
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, Request
 from backend.app.access import require_staff
 from backend.app.reports import income_report, SHOP_TIMEZONE
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,6 +51,19 @@ def init_db():
     with db() as conn:
         conn.executescript(
             """
+            CREATE TABLE IF NOT EXISTS shop_members (
+              fleet_user_id TEXT PRIMARY KEY,
+              role TEXT NOT NULL CHECK(role IN ('SHOP_MECHANIC', 'SHOP_OFFICE')),
+              updated_by TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS shop_membership_events (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              fleet_user_id TEXT NOT NULL,
+              role TEXT,
+              actor TEXT NOT NULL,
+              created_at TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS customers (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT NOT NULL,
@@ -168,7 +181,7 @@ class InspectionPayload(BaseModel):
     notes: str | None = None
     required_parts: str | None = None
     labor_notes: str | None = None
-    status: str = "inspection_complete"
+    status: Literal['inspection_complete', 'in_progress', 'complete'] = "inspection_complete"
 
 
 class EstimateItemPayload(BaseModel):
@@ -178,12 +191,48 @@ class EstimateItemPayload(BaseModel):
 
 
 class StatusPayload(BaseModel):
-    status: str
+    status: Literal['in_progress', 'complete']
     completion_time: str | None = None
 
 
 class PaymentPayload(BaseModel):
     amount: Decimal = Field(ge=0, le=99999999, decimal_places=2)
+
+
+class ShopMemberPayload(BaseModel):
+    role: Literal['SHOP_MECHANIC', 'SHOP_OFFICE']
+
+
+@app.get('/api/session')
+def shop_session(request: Request):
+    return request.state.shop
+
+
+@app.get('/api/shop-members')
+def shop_members():
+    with db() as conn:
+        return [dict(row) for row in conn.execute('SELECT * FROM shop_members ORDER BY fleet_user_id')]
+
+
+@app.put('/api/shop-members/{user_id}')
+def save_shop_member(user_id: int, payload: ShopMemberPayload, request: Request):
+    if user_id <= 0:
+        raise HTTPException(400, 'Fleet account ID must be positive.')
+    with db() as conn:
+        conn.execute('INSERT INTO shop_members VALUES (?, ?, ?, ?) ON CONFLICT(fleet_user_id) DO UPDATE SET role=excluded.role, updated_by=excluded.updated_by, updated_at=excluded.updated_at',
+                     (str(user_id), payload.role, request.state.shop['id'], now_iso()))
+        conn.execute('INSERT INTO shop_membership_events (fleet_user_id, role, actor, created_at) VALUES (?, ?, ?, ?)',
+                     (str(user_id), payload.role, request.state.shop['id'], now_iso()))
+    return {'saved': True}
+
+
+@app.delete('/api/shop-members/{user_id}')
+def revoke_shop_member(user_id: int, request: Request):
+    with db() as conn:
+        conn.execute('DELETE FROM shop_members WHERE fleet_user_id = ?', (str(user_id),))
+        conn.execute('INSERT INTO shop_membership_events (fleet_user_id, role, actor, created_at) VALUES (?, NULL, ?, ?)',
+                     (str(user_id), request.state.shop['id'], now_iso()))
+    return {'removed': True}
 
 
 @app.get('/api/reports/income')
@@ -575,10 +624,13 @@ def update_status(order_id: int, payload: StatusPayload):
 @app.post("/api/orders/{order_id}/upload")
 def upload_file(
     order_id: int,
+    request: Request,
     kind: str = Form(...),
     file: UploadFile = File(...),
     inspection_id: int | None = Form(None),
 ):
+    if kind == 'invoice' and request.state.shop['role'] == 'SHOP_MECHANIC':
+        raise HTTPException(403, 'Office access is required for invoices.')
     if kind not in {"invoice", "photo"}:
         raise HTTPException(status_code=400, detail="kind must be invoice or photo")
     timestamp = now_iso()
