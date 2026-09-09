@@ -3,3 +3,5 @@ uvicorn[standard]==0.32.1
 python-multipart==0.0.20
 pydantic==2.10.3
 tzdata==2025.2
+reportlab==4.4.3
+pillow==11.3.0

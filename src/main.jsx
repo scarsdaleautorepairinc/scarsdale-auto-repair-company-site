@@ -38,6 +38,7 @@ import {
 import './styles.css';
 import ShopOrder, { WorkOrders, BackupPanel, workLabels } from './ShopOrder.jsx';
 import MechanicWorkspace, { MechanicJobs } from './MechanicWorkspace.jsx';
+import SignedIntakeForm, { CheckInRecord } from './CheckIn.jsx';
 
 const company = 'Scarsdale Auto Repair, Inc.';
 const city = 'Mount Vernon, NY';
@@ -858,7 +859,7 @@ function CustomerServiceWorkspace() {
         {activeTab === 'intake' && (
           <section className="service-tab-panel">
             <div className="shop-panel full-panel">
-              <IntakeForm onCreated={(result) => {
+              <SignedIntakeForm api={api} serviceOptions={serviceOptions} onCreated={(result) => {
                 setSelectedId(result.id);
                 setActiveTab('tech');
                 afterChange(`Customer service ticket created. Ticket code: ${result.access_code}`, result.id);
@@ -1389,6 +1390,7 @@ function HistoryTab() {
                 <section>
                   <h4>Customer Concern</h4>
                   <p>{visit.concern}</p>
+                  <CheckInRecord order={visit} fileUrl={fileUrl}/>
                   <div className="tag-row">{visit.requested_services.map((service) => <span key={service}>{service}</span>)}</div>
                 </section>
                 {visit.inspections?.length > 0 && (

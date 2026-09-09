@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { CheckInRecord } from './CheckIn.jsx';
 import { Camera, ImagePlus, Send, RefreshCw, X } from 'lucide-react';
 
 const drafts = new Map();
@@ -58,6 +59,7 @@ export default function MechanicWorkspace({ order, session, api, fileUrl, onChan
     <header className="mechanic-heading"><div><h2>{order.plate || 'No plate'} | #{order.id}</h2><p>{[order.year,order.make,order.model].filter(Boolean).join(' ')} | {order.mileage || '-'} miles</p></div>
       <span>{workLabels[order.work_state]}</span><button className="icon-action" title="Refresh job" aria-label="Refresh job" disabled={busy} onClick={()=>status()}><RefreshCw size={20}/></button></header>
     <section className="mechanic-concern"><h3>Customer Concern</h3><p>{order.concern}</p><small>{order.customer_name} | VIN {order.vin || 'Not recorded'}</small></section>
+    <CheckInRecord order={order} fileUrl={fileUrl} showAuthorization={false}/>
     {error&&<p className="form-error" role="alert">{error}</p>}{notice&&<p className="form-success" role="status">{notice}</p>}
     {!closed&&<form onSubmit={sendFinding}><fieldset disabled={busy} className="mechanic-form"><legend>Add Finding</legend>
       <label>What did you find?<textarea required maxLength={10000} rows={5} value={draft.notes} onChange={e=>edit({notes:e.target.value})}/></label>

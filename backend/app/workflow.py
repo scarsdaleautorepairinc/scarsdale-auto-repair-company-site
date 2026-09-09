@@ -22,6 +22,7 @@ def migrate(conn):
         'repair_orders': {'revision': 'INTEGER NOT NULL DEFAULT 0', 'work_state': 'TEXT', 'assigned_to': 'TEXT', 'promised_at': 'TEXT', 'invoice_total_cents': 'INTEGER', 'office_seen_event': 'INTEGER NOT NULL DEFAULT 0'},
         'estimate_items': {'kind': "TEXT NOT NULL DEFAULT 'service'", 'decision': "TEXT NOT NULL DEFAULT 'pending'", 'deleted_at': 'TEXT'},
         'inspections': {'urgency': "TEXT NOT NULL DEFAULT 'attention'"},
+        'media': {'caption': "TEXT NOT NULL DEFAULT ''", 'area': "TEXT NOT NULL DEFAULT ''"},
     }
     for table, fields in additions.items():
         existing = {r['name'] for r in conn.execute(f'PRAGMA table_info({table})')}
@@ -31,6 +32,10 @@ def migrate(conn):
                 if table == 'estimate_items' and field == 'decision':
                     conn.execute("UPDATE estimate_items SET decision='approved' WHERE approved=1")
     conn.executescript('''
+        CREATE TABLE IF NOT EXISTS shop_authorizations (
+          order_id INTEGER PRIMARY KEY, request_key TEXT UNIQUE NOT NULL, actor TEXT NOT NULL,
+          snapshot TEXT NOT NULL, signature_path TEXT NOT NULL, pdf_path TEXT NOT NULL,
+          signed_at TEXT NOT NULL, fingerprint TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS shop_finding_submissions (
           request_key TEXT PRIMARY KEY, order_id INTEGER NOT NULL, actor TEXT NOT NULL, signature TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS shop_activity (
@@ -63,6 +68,8 @@ def record(conn, order_id, action, detail, request=None):
 
 
 def enrich(conn, result):
+    authorization = conn.execute('SELECT * FROM shop_authorizations WHERE order_id=?', (result['id'],)).fetchone()
+    result['authorization'] = dict(authorization) if authorization else None
     items = result['estimate_items']
     for item in items:
         item['line_total_cents'] = cents(Decimal(str(item['qty'])) * Decimal(str(item['unit_price'])))

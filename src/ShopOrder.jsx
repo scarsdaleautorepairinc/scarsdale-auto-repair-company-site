@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { CheckInRecord } from './CheckIn.jsx';
 import { Check, Download, Eye, Pencil, Plus, Trash2, RefreshCw, Upload } from 'lucide-react';
 
 export const workLabels = { authorized: 'Awaiting inspection', inspection_complete: 'Inspection complete', estimate_ready: 'Estimate ready', approved: 'Approved', in_progress: 'Working', waiting_parts: 'Waiting for parts', complete: 'Ready', needs_review: 'Review legacy status' };
@@ -62,6 +63,7 @@ export default function ShopOrder({ order, view, session, staff, api, fileUrl, F
     <div className="next-action"><strong>{next}</strong><button className="icon-action" title="Refresh ticket" aria-label="Refresh ticket" disabled={busy} onClick={() => execute(() => Promise.resolve(),'Ticket refreshed.')}><RefreshCw size={18} /></button></div>
     <details className="customer-summary"><summary>Customer, vehicle, and intake authorization</summary><p>{order.phone} | {order.email} | {order.address}</p><p>VIN {order.vin || '-'} | Ticket code {order.access_code}</p><p>Authorization recorded for {order.authorization_name}, {date(order.authorized_at)}. Diagnostic fee quoted: {dollars(order.diagnostic_fee*100)}.</p></details>
     <p className="customer-concern"><strong>Customer concern:</strong> {order.concern}</p>
+    <CheckInRecord order={order} fileUrl={fileUrl}/>
     <div className="order-tabs" role="tablist" aria-label="Selected work order">{['inspection',...(isOffice?['estimate','checkout']:[]),'activity'].map(key => <button key={key} role="tab" aria-selected={key===panel} className={key===panel?'is-active':''} onClick={() => setPanel(key)}>{({inspection:'Inspection',estimate:'Estimate & Approval',checkout:'Checkout',activity:'Activity'})[key]}</button>)}</div>
     <fieldset className="order-content" disabled={busy}>
     {panel==='inspection' && <section className="workspace-section">

@@ -11,14 +11,20 @@ const fs = require('node:fs');
   const output = 'data/ui-qa';
   fs.mkdirSync(output, { recursive: true });
   try {
-    await page.goto('http://127.0.0.1:5178/customer-service');
+    await page.goto(process.env.SHOP_QA_URL || 'http://127.0.0.1:5178/customer-service');
     await page.getByRole('tab', { name: 'New Visit', exact: true }).click();
     await page.getByRole('textbox', { name: 'Customer name', exact: true }).fill('Browser QA Only');
     await page.getByRole('textbox', { name: 'Phone', exact: true }).fill('2025550100');
     await page.getByRole('textbox', { name: 'Plate', exact: true }).fill('BROWSERQA');
     await page.getByRole('textbox', { name: 'Customer complaint / concern', exact: true }).fill('Coolant loss and brake noise');
-    await page.getByRole('textbox', { name: 'Authorized by', exact: true }).fill('Browser QA Only');
-    await page.getByRole('button', { name: 'Save Authorization', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Customer signing authorization', exact: true }).fill('Browser QA Only');
+    await page.getByRole('button', { name: 'Review & Sign', exact: true }).click();
+    await page.getByRole('checkbox', { name: 'I have reviewed these details and agree to this authorization.', exact: true }).check();
+    await page.getByRole('img', { name: 'Customer signature', exact: true }).scrollIntoViewIfNeeded();
+    const signature = await page.getByRole('img', { name: 'Customer signature', exact: true }).boundingBox();
+    await page.mouse.move(signature.x+30,signature.y+80);await page.mouse.down();
+    await page.mouse.move(signature.x+150,signature.y+40,{steps:12});await page.mouse.move(signature.x+220,signature.y+110,{steps:12});await page.mouse.up();
+    await page.getByRole('button', { name: 'Save Signed Visit', exact: true }).click();
     await page.getByRole('button', { name: 'Save Finding', exact: true }).waitFor();
     for (const part of ['Coolant reservoir', 'Left front caliper']) {
       await page.getByRole('textbox', { name: 'Finding', exact: true }).fill(`${part} requires replacement`);
@@ -56,10 +62,15 @@ const fs = require('node:fs');
     await page.getByRole('tablist', { name: 'Selected work order' }).getByRole('tab', { name: 'Inspection', exact: true }).click();
     await page.getByRole('button', { name: 'Vehicle Ready', exact: true }).click();
     await page.getByRole('tab', { name: 'Checkout', exact: true }).click();
-    await page.locator('input[type=file]').setInputFiles({ name: 'qa-invoice.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\nQA placeholder invoice\n%%EOF') });
+    const authorizationUrl=await page.getByRole('link',{name:'Download Signed Authorization',exact:true}).getAttribute('href');
+    const samplePdf=await page.request.get(authorizationUrl);
+    await page.locator('input[type=file]').setInputFiles({ name: 'qa-invoice.pdf', mimeType: 'application/pdf', buffer: await samplePdf.body() });
     await page.getByRole('spinbutton', { name: 'Total on uploaded invoice', exact: true }).fill('250');
     await page.getByRole('textbox', { name: 'Verification note', exact: true }).fill('QA fixture total is 250.');
     await page.getByRole('button', { name: 'Verify Invoice Total', exact: true }).click();
+    await page.getByText('Invoice total verified.',{exact:true}).waitFor();
+    await page.waitForFunction(()=>document.querySelector('.order-content')?.disabled===false);
+    await page.getByRole('spinbutton',{name:'Amount received',exact:true}).fill('250');
     await page.getByRole('button', { name: 'Record Payment', exact: true }).click();
     await page.getByText('Visit paid and ready', { exact: true }).waitFor();
     const download = page.waitForEvent('download');
@@ -83,6 +94,10 @@ const fs = require('node:fs');
     await page.getByRole('link', { name: /shop-.*zip/ }).first().waitFor();
     assert.deepEqual(errors, []);
     console.log('PASS: browser intake, findings/photo, parts/labor, approval, ready, invoice, payment, download, backup, and 7 mobile views; no page errors.');
+  } catch(error) {
+    console.log(await page.locator('body').innerText());
+    await page.screenshot({path:`${output}/failure.png`,fullPage:true});
+    throw error;
   } finally {
     await browser.close();
   }

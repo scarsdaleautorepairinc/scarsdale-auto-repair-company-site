@@ -4,6 +4,16 @@ This release changes only the standalone repair-shop service and frontend. Fleet
 
 ## Daily Use
 
+### Signed Check-In
+
+New visits now use **Review & Sign** followed by **Save Signed Visit**. Staff can take/upload optional photos categorized as Arrival Condition or Customer Concern, select the vehicle area, and add captions. The arrival checklist indicates photographed areas. Customer signatures use a touch/mouse signature pad; the customer reviews the details, fee, photos, and inspection-only permission first. Editing reviewed details requires signing again. Additional repair approval remains separate.
+
+Saving atomically stores the visit, categorized photos, original signature image, signed details/wording, staff identity, server timestamp, and a fixed authorization PDF. Retrying the same submission does not duplicate the visit. A failed request retains the current form, photos, and signature; a browser reload does not retain an unfinished intake. The PDF and photo records are available in the office and vehicle history; mechanics see the categorized check-in photos separately from their findings. Old visits remain legacy records and are not presented as newly signed documents. The legacy unsigned intake API is retired in production.
+
+Photos: up to 10 JPG/PNG/WebP/GIF images, 20 MB each, 24 MB total. Camera capture depends on the device/browser. These are in-person drawn signatures, not identity verification or a certification of legal compliance. The shop should review the wording against its policies and applicable requirements. The distinction between initial permission and additional repair approval is consistent with [NY DMV's consumer guidance](https://dmv.ny.gov/know-your-rights-in-auto-repair).
+
+Tests include ten synthetic signed visits, request retries, stale terms, blank signatures, bad-photo/PDF rollback, permissions, backup verification, mobile signing, PDF download, and history. `scripts/test-checkin-ui.cjs` targets isolated local ports 5180/8014; `scripts/test-shop-ui.cjs` accepts `SHOP_QA_URL` for the same isolated frontend. PDF QA artifacts are under ignored `data/checkin-ui/`.
+
 1. **New Visit:** record the customer, vehicle, concern, requested services, and intake authorization. The diagnostic fee is a quote, not an automatic payment or approved estimate line.
 2. **Work Orders:** search customer, plate, VIN, or order number. Filter active visits, repair status, pending approvals, new updates, or assignments to the signed-in user.
 3. **Inspection:** assign a technician and promised completion time. Technicians appear after their first successful shop sign-in. Add each finding separately, choose a priority, and upload its photos. Earlier findings remain attached to the visit. The signed-in identity is recorded automatically.

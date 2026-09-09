@@ -15,6 +15,7 @@ from backend.app.reports import income_report, SHOP_TIMEZONE
 from backend.app import workflow
 from backend.app import backups
 from backend.app import mechanic
+from backend.app import checkin
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -32,6 +33,7 @@ app = FastAPI(title="Scarsdale Auto Repair Shop System", dependencies=[Depends(r
 app.include_router(workflow.router)
 app.include_router(backups.router)
 app.include_router(mechanic.router)
+app.include_router(checkin.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -438,6 +440,7 @@ def vehicle_history(plate: str | None = None, vin: str | None = None):
                     "approved_cents": detail['approved_cents'],
                     "estimate_items": detail['estimate_items'],
                     "activity": detail['activity'],
+                    "authorization": detail['authorization'],
                 }
             )
     return {"vehicle": vehicle, "visits": visits}
@@ -459,6 +462,9 @@ def clear_data():
 
 @app.post("/api/intake")
 def create_intake(payload: IntakePayload, request: Request = None):
+    from backend.app import access
+    if access.PRODUCTION:
+        raise HTTPException(410, 'Refresh the shop and use the signed check-in form.')
     created = now_iso()
     access_code = uuid4().hex[:8].upper()
     services = ",".join(payload.requested_services)

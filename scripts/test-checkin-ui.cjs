@@ -1,0 +1,53 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+(async()=>{
+  const browser=await chromium.launch({channel:'msedge',headless:true});
+  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+  fs.mkdirSync('data/checkin-ui',{recursive:true});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  try {
+    await page.goto('http://127.0.0.1:5180/customer-service');
+    await page.getByRole('tab',{name:'New Visit',exact:true}).click();
+    for(const [name,value]of [['Customer name','Arrival QA'],['Phone','2025550100'],['Plate','ARRIVALQA'],['Customer complaint / concern','Coolant loss and front brake noise'],['Customer signing authorization','Arrival QA']])await page.getByRole('textbox',{name,exact:true}).fill(value);
+    const file={name:'arrival.png',mimeType:'image/png',buffer:await page.screenshot({clip:{x:0,y:0,width:400,height:250}})};
+    await page.getByLabel('Add check-in photos',{exact:true}).setInputFiles(file);
+    await page.getByRole('textbox',{name:'Caption',exact:true}).fill('Existing front bumper scratch');
+    await page.getByRole('combobox',{name:'Photo category',exact:true}).selectOption('concern');
+    await page.getByRole('combobox',{name:'Vehicle area',exact:true}).selectOption('other');
+    await page.getByLabel('Add check-in photos',{exact:true}).setInputFiles({...file,name:'concern.png'});
+    await page.getByRole('textbox',{name:'Caption',exact:true}).nth(1).fill('Coolant visible beneath vehicle');
+    await page.screenshot({path:'data/checkin-ui/desktop-intake.png',fullPage:true});
+    await page.getByRole('button',{name:'Review & Sign',exact:true}).click();
+    await page.getByRole('button',{name:'Edit Details',exact:true}).click();
+    assert.equal(await page.getByRole('textbox',{name:'Customer name',exact:true}).inputValue(),'Arrival QA');
+    assert.equal(await page.getByRole('textbox',{name:'Customer complaint / concern',exact:true}).inputValue(),'Coolant loss and front brake noise');
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await page.screenshot({path:'data/checkin-ui/mobile-intake.png',fullPage:true});
+    await page.getByRole('button',{name:'Review & Sign',exact:true}).click();
+    await page.getByRole('checkbox',{name:'I have reviewed these details and agree to this authorization.',exact:true}).check();
+    await page.getByRole('button',{name:'Save Signed Visit',exact:true}).click();
+    await page.getByRole('alert').waitFor();
+    const draw=async()=>{const canvas=page.getByRole('img',{name:'Customer signature',exact:true});await canvas.scrollIntoViewIfNeeded();const r=await canvas.boundingBox();await page.mouse.move(r.x+20,r.y+80);await page.mouse.down();await page.mouse.move(r.x+90,r.y+30,{steps:10});await page.mouse.move(r.x+180,r.y+100,{steps:10});await page.mouse.up();};
+    await draw();await page.getByRole('button',{name:'Clear / Sign Again',exact:true}).click();await draw();
+    await page.screenshot({path:'data/checkin-ui/mobile-review.png',fullPage:true});
+    let submitted;
+    await page.route('**/api/check-in',async route=>{const response=await route.fetch();submitted=await response.json();await route.abort();});
+    await page.getByRole('button',{name:'Save Signed Visit',exact:true}).click();
+    await page.getByText(/Your signature, photos, and details are still here/).waitFor();
+    await page.unroute('**/api/check-in');
+    await page.getByRole('button',{name:'Save Signed Visit',exact:true}).click();
+    await page.getByRole('link',{name:'Download Signed Authorization',exact:true}).waitFor();
+    assert.equal(await page.getByRole('heading',{name:'Arrival Condition Photos',exact:true}).count(),1);
+    assert.equal(await page.getByRole('heading',{name:'Customer Concern Photos',exact:true}).count(),1);
+    const downloadPromise=page.waitForEvent('download');await page.getByRole('link',{name:'Download Signed Authorization',exact:true}).click();const download=await downloadPromise;await download.saveAs('data/checkin-ui/authorization.pdf');
+    const history=await page.request.get('http://127.0.0.1:8014/api/history?plate=ARRIVALQA');
+    const visits=(await history.json()).visits;
+    assert.equal(visits.filter(v=>v.id===submitted.id).length,1);
+    assert.ok(visits.find(v=>v.id===submitted.id).authorization);
+    assert.deepEqual(errors,[]);
+    console.log('PASS: categorized photos/captions, review/edit, blank signature, clear/re-sign, mobile overflow, lost-response retry, PDF download and history.');
+  } catch(e){console.log(await page.locator('body').innerText());await page.screenshot({path:'data/checkin-ui/failure.png',fullPage:true});throw e;}
+  finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
