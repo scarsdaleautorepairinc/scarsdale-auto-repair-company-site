@@ -4,7 +4,6 @@ from typing import Literal
 from pathlib import Path
 from uuid import uuid4
 import sqlite3
-import shutil
 import json
 import os
 from urllib.parse import quote
@@ -13,6 +12,8 @@ from urllib.request import urlopen
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, Request
 from backend.app.access import require_staff
 from backend.app.reports import income_report, SHOP_TIMEZONE
+from backend.app import workflow
+from backend.app import backups
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -27,6 +28,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Scarsdale Auto Repair Shop System", dependencies=[Depends(require_staff)])
+app.include_router(workflow.router)
+app.include_router(backups.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,8 +44,16 @@ def now_iso():
     return datetime.utcnow().isoformat(timespec="seconds") + "Z"
 
 
+class ShopConnection(sqlite3.Connection):
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
+
 def db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30, factory=ShopConnection)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -152,11 +163,19 @@ def init_db():
             conn.execute("ALTER TABLE repair_orders ADD COLUMN paid_amount_cents INTEGER")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_created ON repair_orders(created_at)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_paid ON repair_orders(paid_at)")
+        workflow.migrate(conn)
 
 
 @app.on_event("startup")
 def startup():
     init_db()
+    if os.getenv('SHOP_ENV') == 'production':
+        backups.start()
+
+
+@app.on_event('shutdown')
+def shutdown():
+    backups.stop.set()
 
 
 class IntakePayload(BaseModel):
@@ -181,6 +200,7 @@ class InspectionPayload(BaseModel):
     notes: str | None = None
     required_parts: str | None = None
     labor_notes: str | None = None
+    urgency: Literal['good', 'attention', 'urgent'] = 'attention'
     status: Literal['inspection_complete', 'in_progress', 'complete'] = "inspection_complete"
 
 
@@ -191,7 +211,8 @@ class EstimateItemPayload(BaseModel):
 
 
 class StatusPayload(BaseModel):
-    status: Literal['in_progress', 'complete']
+    revision: int | None = Field(default=None, ge=0)
+    status: Literal['in_progress', 'complete', 'waiting_parts']
     completion_time: str | None = None
 
 
@@ -201,6 +222,11 @@ class PaymentPayload(BaseModel):
 
 @app.get('/api/session')
 def shop_session(request: Request):
+    if request.state.shop.get('role'):
+        with db() as conn:
+            user = request.state.shop
+            conn.execute('INSERT INTO shop_staff VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,role=excluded.role,last_seen=excluded.last_seen',
+                         (user['id'], user.get('name', ''), user['role'], now_iso()))
     return request.state.shop
 
 
@@ -224,7 +250,7 @@ def normalize_lookup(value):
 
 def order_work_summary(conn, order_id):
     items = conn.execute(
-        "SELECT description, qty, unit_price FROM estimate_items WHERE repair_order_id = ? ORDER BY id",
+        "SELECT description, qty, unit_price FROM estimate_items WHERE repair_order_id = ? AND approved=1 AND deleted_at IS NULL ORDER BY id",
         (order_id,),
     ).fetchall()
     if not items:
@@ -256,7 +282,7 @@ def fetch_order(conn, order_id):
         raise HTTPException(status_code=404, detail="Repair order not found")
 
     items = conn.execute(
-        "SELECT * FROM estimate_items WHERE repair_order_id = ? ORDER BY id",
+        "SELECT * FROM estimate_items WHERE repair_order_id = ? AND deleted_at IS NULL ORDER BY id",
         (order_id,),
     ).fetchall()
     inspections = conn.execute(
@@ -274,7 +300,7 @@ def fetch_order(conn, order_id):
     result["estimate_items"] = [dict(item) for item in items]
     result["inspections"] = [dict(item) for item in inspections]
     result["media"] = [dict(item) for item in media]
-    return result
+    return workflow.enrich(conn, result)
 
 
 @app.get("/api/health")
@@ -401,10 +427,15 @@ def vehicle_history(plate: str | None = None, vin: str | None = None):
                     "inspection": dict(latest_inspection) if latest_inspection else None,
                     "inspections": detail["inspections"],
                     "media": detail["media"],
-                    "invoice_total": row["estimate_total"],
+                    "invoice_total": (detail['invoice_total_cents'] if detail['invoice_total_cents'] is not None else detail['approved_cents']) / 100,
                     "invoice_name": row["invoice_name"],
                     "ready_at": row["ready_at"],
                     "paid_at": row["paid_at"],
+                    "work_state": detail['work_state'],
+                    "payment_state": detail['payment_state'],
+                    "approved_cents": detail['approved_cents'],
+                    "estimate_items": detail['estimate_items'],
+                    "activity": detail['activity'],
                 }
             )
     return {"vehicle": vehicle, "visits": visits}
@@ -425,7 +456,7 @@ def clear_data():
 
 
 @app.post("/api/intake")
-def create_intake(payload: IntakePayload):
+def create_intake(payload: IntakePayload, request: Request = None):
     created = now_iso()
     access_code = uuid4().hex[:8].upper()
     services = ",".join(payload.requested_services)
@@ -475,6 +506,7 @@ def create_intake(payload: IntakePayload):
             ),
         )
         order_id = cursor.lastrowid
+        workflow.record(conn, order_id, 'Intake authorization recorded', {'authorized_by': payload.authorization_name, 'diagnostic_fee': payload.diagnostic_fee}, request)
     return {"id": order_id, "access_code": access_code}
 
 
@@ -492,7 +524,11 @@ def list_orders():
             ORDER BY ro.updated_at DESC
             """
         ).fetchall()
-    return [dict(row) for row in rows]
+        summaries = []
+        for row in rows:
+            detail = fetch_order(conn, row['id'])
+            summaries.append({**dict(row), **{key: detail[key] for key in ('work_state','payment_state','balance_cents','assigned_to','promised_at','unread_updates','pending_items')}, 'vin': detail['vin']})
+    return summaries
 
 
 @app.get("/api/orders/{order_id}")
@@ -514,10 +550,13 @@ def customer_order(access_code: str):
 
 
 @app.post("/api/orders/{order_id}/inspection")
-def add_inspection(order_id: int, payload: InspectionPayload):
+def add_inspection(order_id: int, payload: InspectionPayload, request: Request = None):
     created = now_iso()
     with db() as conn:
-        fetch_order(conn, order_id)
+        conn.execute('BEGIN IMMEDIATE')
+        order = fetch_order(conn, order_id)
+        if order['work_state'] == 'complete' or order.get('paid_at'):
+            raise HTTPException(409, 'This visit is closed for findings. Create a new visit for additional work.')
         conn.execute(
             """
             INSERT INTO inspections (repair_order_id, technician, notes, required_parts, labor_notes, created_at)
@@ -536,6 +575,11 @@ def add_inspection(order_id: int, payload: InspectionPayload):
             "UPDATE repair_orders SET status = ?, updated_at = ? WHERE id = ?",
             (payload.status, created, order_id),
         )
+        finding_id = conn.execute('SELECT MAX(id) FROM inspections WHERE repair_order_id=?', (order_id,)).fetchone()[0]
+        conn.execute('UPDATE inspections SET urgency=?,technician=? WHERE id=?', (payload.urgency, workflow.actor(request).get('name') if request else payload.technician, finding_id))
+        state = 'inspection_complete' if order['work_state'] in ('authorized', 'needs_review') else order['work_state']
+        conn.execute('UPDATE repair_orders SET work_state=? WHERE id=?', (state, order_id))
+        workflow.record(conn, order_id, 'Finding added', {'finding_id': finding_id, 'urgency': payload.urgency}, request)
         return fetch_order(conn, order_id)
 
 
@@ -543,7 +587,10 @@ def add_inspection(order_id: int, payload: InspectionPayload):
 def add_estimate_item(order_id: int, payload: EstimateItemPayload):
     updated = now_iso()
     with db() as conn:
-        fetch_order(conn, order_id)
+        workflow.editable(fetch_order(conn, order_id))
+        from backend.app import access
+        if access.PRODUCTION:
+            raise HTTPException(410, 'Refresh the shop and use the versioned estimate editor.')
         conn.execute(
             """
             INSERT INTO estimate_items (repair_order_id, description, qty, unit_price)
@@ -567,8 +614,11 @@ def approve_estimate(order_id: int):
     updated = now_iso()
     with db() as conn:
         fetch_order(conn, order_id)
+        from backend.app import access
+        if access.PRODUCTION:
+            raise HTTPException(410, 'Refresh the shop and record a customer decision with approval evidence.')
         conn.execute(
-            "UPDATE estimate_items SET approved = 1 WHERE repair_order_id = ?",
+            "UPDATE estimate_items SET approved = 1, decision='approved' WHERE repair_order_id = ?",
             (order_id,),
         )
         conn.execute(
@@ -579,14 +629,26 @@ def approve_estimate(order_id: int):
 
 
 @app.patch("/api/orders/{order_id}/status")
-def update_status(order_id: int, payload: StatusPayload):
+def update_status(order_id: int, payload: StatusPayload, request: Request = None):
     updated = now_iso()
     with db() as conn:
-        fetch_order(conn, order_id)
+        conn.execute('BEGIN IMMEDIATE')
+        order = fetch_order(conn, order_id)
+        if payload.revision is not None and payload.revision != order['revision']:
+            raise HTTPException(409, 'This ticket changed. Refresh before saving.')
+        if order['work_state'] == 'complete' and payload.status != 'complete':
+            raise HTTPException(409, 'Ready vehicles cannot be moved backwards. Create a new visit for additional repairs.')
+        if order.get('paid_at') and payload.status != 'complete':
+            raise HTTPException(409, 'A paid visit cannot be moved backwards.')
+        can_close_declined = payload.status == 'complete' and order['estimate_items'] and not order['pending_items']
+        if not order.get('paid_at') and (order['pending_items'] or (not any(i['approved'] for i in order['estimate_items']) and not can_close_declined)):
+            raise HTTPException(409, 'Record customer decisions for all estimate lines before starting work.')
         conn.execute(
             "UPDATE repair_orders SET status = ?, completion_time = COALESCE(?, completion_time), ready_at = CASE WHEN ? = 'complete' THEN COALESCE(ready_at, ?) ELSE ready_at END, updated_at = ? WHERE id = ?",
             (payload.status, payload.completion_time, payload.status, updated, updated, order_id),
         )
+        conn.execute('UPDATE repair_orders SET work_state=? WHERE id=?', (payload.status, order_id))
+        workflow.record(conn, order_id, 'Repair status changed', {'from': order['work_state'], 'to': payload.status}, request)
         return fetch_order(conn, order_id)
 
 
@@ -607,7 +669,10 @@ def upload_file(
     stored_name = f"{order_id}-{kind}-{uuid4().hex}{suffix}"
     stored_path = UPLOAD_DIR / stored_name
     with db() as conn:
-        fetch_order(conn, order_id)
+        conn.execute('BEGIN IMMEDIATE')
+        order = fetch_order(conn, order_id)
+        if kind == 'invoice' and (order['received_cents'] or order.get('paid_at')):
+            raise HTTPException(409, 'Invoice is locked after payment.')
         if inspection_id is not None:
             finding = conn.execute(
                 "SELECT id FROM inspections WHERE id = ? AND repair_order_id = ?",
@@ -615,8 +680,19 @@ def upload_file(
             ).fetchone()
             if kind != "photo" or not finding:
                 raise HTTPException(status_code=400, detail="Photo must belong to a finding on this ticket")
-        with stored_path.open("wb") as output:
-            shutil.copyfileobj(file.file, output)
+        try:
+            size = 0
+            with stored_path.open('wb') as output:
+                while chunk := file.file.read(1024 * 1024):
+                    size += len(chunk)
+                    if size > 20 * 1024 * 1024:
+                        raise HTTPException(413, 'Attachments must be 20 MB or smaller.')
+                    output.write(chunk)
+            if not size:
+                raise HTTPException(422, 'The attachment is empty.')
+        except Exception:
+            stored_path.unlink(missing_ok=True)
+            raise
         relative_path = f"uploads/{stored_name}"
         conn.execute(
             """
@@ -629,16 +705,17 @@ def upload_file(
             conn.execute(
                 """
                 UPDATE repair_orders
-                SET invoice_path = ?, invoice_name = ?, status = ?, updated_at = ?
+                SET invoice_path = ?, invoice_name = ?, status = ?, invoice_total_cents=NULL, updated_at = ?
                 WHERE id = ?
                 """,
-                (relative_path, file.filename or stored_name, "invoice_uploaded", timestamp, order_id),
+                (relative_path, file.filename or stored_name, order['status'], timestamp, order_id),
             )
         else:
             conn.execute(
                 "UPDATE repair_orders SET updated_at = ? WHERE id = ?",
                 (timestamp, order_id),
             )
+        workflow.record(conn, order_id, 'Invoice uploaded' if kind == 'invoice' else 'Photo uploaded', {'name': file.filename, 'finding_id': inspection_id}, request)
         return fetch_order(conn, order_id)
 
 
@@ -650,6 +727,9 @@ def mark_paid(order_id: int, payload: PaymentPayload | None = None):
         order = fetch_order(conn, order_id)
         if order['paid_amount_cents'] is not None and order['paid_at']:
             return order
+        from backend.app import access
+        if access.PRODUCTION:
+            raise HTTPException(410, 'Refresh the shop and use verified invoice checkout.')
         amount = payload.amount if payload else Decimal(str(order['estimate_total'])).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if not amount.is_finite() or amount < 0:
             raise HTTPException(400, 'Enter a valid payment amount')
@@ -671,4 +751,4 @@ def get_file(file_name: str, download: bool = False):
             media = conn.execute('SELECT original_name FROM media WHERE stored_path = ? ORDER BY id DESC LIMIT 1', (f'uploads/{safe_name}',)).fetchone()
         name = Path(media['original_name'].replace('\\', '/')).name if media else safe_name
         return FileResponse(file_path, filename=name or safe_name, content_disposition_type='attachment')
-    return FileResponse(file_path)
+    return FileResponse(file_path, headers={'Content-Security-Policy': "sandbox; default-src 'none'; style-src 'unsafe-inline'", 'X-Content-Type-Options': 'nosniff'})

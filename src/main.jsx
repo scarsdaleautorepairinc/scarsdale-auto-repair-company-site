@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   BriefcaseBusiness,
@@ -36,6 +36,7 @@ import {
   Zap
 } from 'lucide-react';
 import './styles.css';
+import ShopOrder, { WorkOrders, BackupPanel, workLabels } from './ShopOrder.jsx';
 
 const company = 'Scarsdale Auto Repair, Inc.';
 const city = 'Mount Vernon, NY';
@@ -225,7 +226,7 @@ async function api(path, options = {}) {
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-    throw new Error(error.detail || 'Request failed');
+    throw new Error(Array.isArray(error.detail) ? error.detail.map(item => item.msg).join('; ') : error.detail || 'Request failed');
   }
   return response.json();
 }
@@ -736,21 +737,26 @@ function CustomerServicePage() {
 }
 
 function CustomerServiceWorkspace() {
+  const [staff, setStaff] = useState([]);
   const [session, setSession] = useState(null);
   const [orders, setOrders] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const currentSelectedId = useRef(selectedId);
+  currentSelectedId.current = selectedId;
   const [selected, setSelected] = useState(null);
-  const [activeTab, setActiveTab] = useState('intake');
+  const [activeTab, setActiveTab] = useState('orders');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const tabs = [
-    ['intake', '1. Customer Form'],
-    ['tech', '2. Tech Findings'],
-    ['office', '3. Office / Invoice'],
-    ['history', '4. Vehicle History'],
-    ['reports', '5. Reports']
-  ].filter(([key]) => session && (session.role === 'SHOP_MECHANIC' ? key === 'tech' : Boolean(session.role)));
+    ['orders', 'Work Orders'],
+    ['intake', 'New Visit'],
+    ['tech', 'Inspection'],
+    ['office', 'Estimate / Checkout'],
+    ['history', 'Vehicle History'],
+    ['reports', 'Reports'],
+    ['backups', 'Backups']
+  ].filter(([key]) => session && (key === 'backups' ? session.role === 'SHOP_ADMIN' : session.role === 'SHOP_MECHANIC' ? ['orders','tech'].includes(key) : Boolean(session.role)));
 
   async function loadOrders() {
     setLoading(true);
@@ -765,7 +771,8 @@ function CustomerServiceWorkspace() {
       setSelected(null);
       return;
     }
-    setSelected(await api(`/api/orders/${id}`));
+    const result = await api(`/api/orders/${id}`);
+    if (currentSelectedId.current === id) setSelected(result);
   }
 
   useEffect(() => {
@@ -773,7 +780,7 @@ function CustomerServiceWorkspace() {
     api('/api/session').then(async (profile) => {
       setSession(profile);
       if (!profile.role) { setLoading(false); return; }
-      if (profile.role === 'SHOP_MECHANIC') setActiveTab('tech');
+      setStaff(await api('/api/shop-staff'));
       await loadOrders();
     }).catch((err) => {
       setError(err.message);
@@ -782,8 +789,18 @@ function CustomerServiceWorkspace() {
   }, []);
 
   useEffect(() => {
-    loadSelected().catch((err) => setError(err.message));
+    let cancelled = false;
+    if (selectedId) api(`/api/orders/${selectedId}`).then(data => { if(!cancelled)setSelected(data); }).catch(err => { if(!cancelled)setError(err.message); });
+    return () => { cancelled = true; };
   }, [selectedId, activeTab]);
+
+  useEffect(() => {
+    if (!session?.role) return;
+    let cancelled=false;
+    const refresh=async()=>{ if(document.hidden)return;try {const data=await api('/api/orders');if(!cancelled)setOrders(data);}catch(err){if(!cancelled)setError(err.message);} };
+    const timer=setInterval(refresh,20000);
+    return()=>{cancelled=true;clearInterval(timer);};
+  },[session?.role]);
 
   async function afterChange(text, orderId = selectedId) {
     setMessage(text);
@@ -831,6 +848,9 @@ function CustomerServiceWorkspace() {
 
         {error && <p className="form-error">{error} {import.meta.env.PROD && <a href="/">Fleet Solutions Sign In</a>}</p>}
         {message && <p className="form-success">{message}</p>}
+        {orders.some(o=>o.unread_updates>0) && session.role !== 'SHOP_MECHANIC' && <button className="updates-alert" onClick={()=>setActiveTab('orders')}>{orders.reduce((sum,o)=>sum+(o.unread_updates||0),0)} new shop updates</button>}
+        {activeTab === 'orders' && <WorkOrders orders={orders} staff={staff} session={session} onSelect={id=>{setSelectedId(id);setActiveTab(session.role==='SHOP_MECHANIC'?'tech':'office');}} />}
+        {activeTab === 'backups' && <BackupPanel api={api} apiBase={API_BASE}/>}
 
         {activeTab === 'intake' && (
           <section className="service-tab-panel">
@@ -854,15 +874,10 @@ function CustomerServiceWorkspace() {
 
         {['tech', 'office'].includes(activeTab) && (
           <section className="service-tab-panel">
-            <TicketSelector
-              orders={orders}
-              selectedId={selectedId}
-              loading={loading}
-              onSelect={setSelectedId}
-            />
-            <div className="shop-panel full-panel">
-              {selected ? (
-                <OrderDetail order={selected} view={activeTab} onChange={afterChange} onError={setError} />
+            <label className="ticket-picker">Work order<select value={selectedId||''} onChange={e=>setSelectedId(Number(e.target.value))}><option value="" disabled>Select a visit</option>{orders.map(o=><option key={o.id} value={o.id}>#{o.id} {o.customer_name} | {o.plate}</option>)}</select></label>
+            <div>
+              {selected && selected.id===selectedId ? (
+                <ShopOrder key={selected.id} order={selected} view={activeTab} session={session} staff={staff} api={api} fileUrl={fileUrl} Findings={FindingHistory} onChange={afterChange} onError={setError} />
               ) : (
                 <div className="empty-state">
                   <ClipboardCheck size={42} />
@@ -1015,7 +1030,7 @@ function FindingHistory({ inspections, photos, onUpload }) {
   const unassigned = photos.filter((photo) => !photo.inspection_id);
   function attachments(items) {
     return <div className="photo-grid">{items.map((photo) => (
-      <a key={photo.id} href={fileUrl(photo.stored_path)} target="_blank" rel="noreferrer">{photo.original_name}</a>
+      <a className="finding-photo" key={photo.id} href={fileUrl(photo.stored_path)} target="_blank" rel="noreferrer">{/\.(png|jpe?g|gif|webp)$/i.test(photo.original_name) ? <img loading="lazy" src={fileUrl(photo.stored_path)} alt={photo.original_name}/> : <FileText size={24}/>}<span>{photo.original_name}</span></a>
     ))}</div>;
   }
   return <div className="finding-history">
@@ -1023,6 +1038,7 @@ function FindingHistory({ inspections, photos, onUpload }) {
     {[...inspections].reverse().map((finding, index) => (
       <article className="finding-entry" key={finding.id}>
         <h4>Finding {index + 1} | {finding.technician || 'Technician'}</h4>
+        {finding.urgency && <span className={`finding-priority ${finding.urgency}`}>{finding.urgency}</span>}
         <time dateTime={finding.created_at}>{new Date(finding.created_at).toLocaleString()}</time>
         <p><strong>Notes</strong><br />{finding.notes || 'No inspection notes.'}</p>
         <p><strong>Parts / area</strong><br />{finding.required_parts || 'No bad part listed.'}</p>
@@ -1245,7 +1261,7 @@ function ReportsTab() {
   }, [period, selectedDate, selectedMonth, refresh]);
 
   function exportCsv() {
-    const rows = [['Date (New York)', 'Customer visits', 'Paid tickets', 'Income received (USD)', 'Missing payment amounts'],
+    const rows = [['Date (New York)', 'Customer visits', 'Paying visits', 'Income received (USD)', 'Missing payment amounts'],
       ...report.days.map((day) => [day.date, day.visits, day.paid_tickets, (day.income_cents / 100).toFixed(2), day.missing_amounts]),
       ['Total', report.totals.visits, report.totals.paid_tickets, (report.totals.income_cents / 100).toFixed(2), report.totals.missing_amounts]];
     const url = URL.createObjectURL(new Blob([rows.map((row) => row.join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8;' }));
@@ -1273,18 +1289,18 @@ function ReportsTab() {
     {report && <>
       <dl className="report-totals">
         <div><dt>Customer visits</dt><dd>{report.totals.visits}</dd></div>
-        <div><dt>Paid tickets</dt><dd>{report.totals.paid_tickets}</dd></div>
+        <div><dt>Paying visits</dt><dd>{report.totals.paid_tickets}</dd></div>
         <div><dt>Income received</dt><dd>{money(report.totals.income_cents / 100)}</dd></div>
       </dl>
       {report.totals.missing_amounts > 0 && <p className="form-error">{report.totals.missing_amounts} paid ticket(s) have no recorded payment amount and are excluded from income.</p>}
       {period === 'month' && <div className="report-table-wrap"><table className="report-table">
-        <caption>Daily Breakdown</caption><thead><tr><th>Date</th><th>Customer visits</th><th>Paid tickets</th><th>Income received</th></tr></thead>
+        <caption>Daily Breakdown</caption><thead><tr><th>Date</th><th>Customer visits</th><th>Paying visits</th><th>Income received</th></tr></thead>
         <tbody>{report.days.map((day) => <tr key={day.date}><td>{day.date}</td><td>{day.visits}</td><td>{day.paid_tickets}</td><td>{money(day.income_cents / 100)}{day.missing_amounts > 0 && ' *'}</td></tr>)}</tbody>
         <tfoot><tr><th>Total</th><td>{report.totals.visits}</td><td>{report.totals.paid_tickets}</td><td>{money(report.totals.income_cents / 100)}</td></tr></tfoot>
       </table></div>}
       <div className="report-table-wrap"><table className="report-table">
         <caption>Payments Received</caption><thead><tr><th>Date</th><th>Ticket</th><th>Customer</th><th>Plate</th><th>Amount received</th></tr></thead>
-        <tbody>{report.payments.length ? report.payments.map((payment) => <tr key={payment.id}><td>{payment.date}</td><td>#{payment.id}</td><td>{payment.customer_name}</td><td>{payment.plate || '-'}</td><td>{payment.paid_amount_cents == null ? 'Not recorded' : money(payment.paid_amount_cents / 100)}</td></tr>) : <tr><td colSpan="5">No payments recorded for this period.</td></tr>}</tbody>
+        <tbody>{report.payments.length ? report.payments.map((payment, index) => <tr key={`${payment.id}-${index}`}><td>{payment.date}</td><td>#{payment.id}</td><td>{payment.customer_name}</td><td>{payment.plate || '-'}</td><td>{payment.paid_amount_cents == null ? 'Not recorded' : money(payment.paid_amount_cents / 100)}</td></tr>) : <tr><td colSpan="5">No payments recorded for this period.</td></tr>}</tbody>
       </table></div>
       <div className="report-table-wrap"><table className="report-table">
         <caption>Customer Visits</caption><thead><tr><th>Date</th><th>Ticket</th><th>Customer</th><th>Plate</th></tr></thead>
@@ -1357,7 +1373,7 @@ function HistoryTab() {
                     <p className="eyebrow">Visit #{visit.id}</p>
                     <h3>{formatDate(visit.date)}</h3>
                   </div>
-                  <span>{statusLabels[visit.status] || visit.status}</span>
+                  <span>{workLabels[visit.work_state] || visit.status} | {visit.payment_state}</span>
                 </div>
                 <div className="history-meta">
                   <p><strong>Mileage</strong>{visit.mileage || 'Not recorded'}</p>
@@ -1377,7 +1393,7 @@ function HistoryTab() {
                   </section>
                 )}
                 <section>
-                  <h4>Work Done</h4>
+                  <h4>{visit.work_state === 'complete' ? 'Work Done' : 'Approved Work'}</h4>
                   {visit.work_done.length > 0 ? (
                     <div className="line-items">
                       {visit.work_done.map((item) => (

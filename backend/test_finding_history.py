@@ -36,13 +36,14 @@ class FindingHistoryTest(unittest.TestCase):
                     customer_name="Test", phone="test", concern="Inspection", authorization_name="Test"
                 ))["id"]
                 findings = []
+                request = Request({'type': 'http', 'state': {'shop': {'id': 'test', 'name': 'Test Tech', 'role': 'SHOP_MECHANIC'}}})
                 for part in ("Coolant reservoir", "Left caliper"):
                     order = main.add_inspection(ticket, main.InspectionPayload(
                         technician="Test Tech", notes=f"Replace {part}", required_parts=part, labor_notes=f"Install {part}"
                     ))
                     finding_id = order["inspections"][0]["id"]
                     findings.append(finding_id)
-                    main.upload_file(ticket, Request({'type': 'http'}), "photo", UploadFile(filename=f"{part}.jpg", file=io.BytesIO(b"test")), finding_id)
+                    main.upload_file(ticket, request, "photo", UploadFile(filename=f"{part}.jpg", file=io.BytesIO(b"test")), finding_id)
                 saved = main.get_order(ticket)
                 self.assertEqual([i["required_parts"] for i in saved["inspections"]], ["Left caliper", "Coolant reservoir"])
                 self.assertEqual({m["inspection_id"] for m in saved["media"]}, {None, *findings})
@@ -51,7 +52,7 @@ class FindingHistoryTest(unittest.TestCase):
                     customer_name="Other", phone="test", concern="Inspection", authorization_name="Other"
                 ))["id"]
                 with self.assertRaises(HTTPException):
-                    main.upload_file(other, Request({'type': 'http'}), "photo", UploadFile(filename="wrong.jpg", file=io.BytesIO(b"test")), findings[0])
+                    main.upload_file(other, request, "photo", UploadFile(filename="wrong.jpg", file=io.BytesIO(b"test")), findings[0])
                 self.assertEqual(len(main.get_order(other)["media"]), 0)
 
 
