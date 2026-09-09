@@ -1,0 +1,52 @@
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+
+(async()=>{
+  const browser=await chromium.launch({channel:'msedge',headless:true});
+  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  fs.mkdirSync('data/mechanic-ui',{recursive:true});
+  try {
+    const created=await page.request.post('http://127.0.0.1:8013/api/intake',{data:{customer_name:'Mechanic QA Only',phone:'2025550100',plate:'MECHQA',concern:'Coolant loss and front brake noise',authorization_name:'QA Customer',requested_services:['Diagnostic']}});
+    const ticket=await created.json();
+    await page.route('**/api/session',route=>route.fulfill({json:{id:'local',name:'QA Mechanic',role:'SHOP_MECHANIC'}}));
+    await page.goto('http://127.0.0.1:5179/customer-service');
+    await page.getByRole('button',{name:new RegExp(`MECHQA.*#${ticket.id}`)}).click();
+    await page.getByRole('textbox',{name:'What did you find?',exact:true}).fill('Coolant reservoir leaking');
+    await page.getByRole('textbox',{name:'Parts needed',exact:true}).fill('Coolant reservoir\nCoolant');
+    const photo={name:'qa-photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')};
+    await page.getByLabel('Add photos',{exact:true}).setInputFiles([photo,{...photo,name:'qa-photo-2.png'}]);
+    assert.equal(await page.locator('.mechanic-photos figure').count(),2);
+    await page.getByRole('button',{name:'Remove photo 2',exact:true}).click();
+    await page.getByLabel('Add photos',{exact:true}).setInputFiles({...photo,name:'qa-photo-2.png'});
+    const endpoint=`**/api/orders/${ticket.id}/findings`;
+    await page.route(endpoint,async route=>{await route.fetch();await route.abort();});
+    await page.getByRole('button',{name:'Send to Office',exact:true}).click();
+    await page.getByRole('alert').waitFor();
+    assert.equal(await page.getByRole('textbox',{name:'What did you find?',exact:true}).inputValue(),'Coolant reservoir leaking');
+    assert.equal(await page.locator('.mechanic-photos figure').count(),2);
+    await page.unroute(endpoint);
+    await page.getByRole('button',{name:'Send to Office',exact:true}).click();
+    await page.getByText('Sent to office.',{exact:true}).waitFor();
+    await page.locator('.mechanic-finding').waitFor();
+    assert.equal(await page.locator('.mechanic-finding').count(),1);
+    assert.equal(await page.locator('.mechanic-finding img').count(),2);
+    assert.equal(await page.getByRole('tab',{name:'Activity',exact:true}).count(),0);
+    assert.equal(await page.getByText(/Balance \$/).count(),0);
+    await page.getByRole('textbox',{name:'What did you find?',exact:true}).fill('Left caliper seized');
+    await page.getByRole('button',{name:'Send to Office',exact:true}).click();
+    await page.waitForFunction(()=>document.querySelectorAll('.mechanic-finding').length===2);
+    await page.waitForFunction(()=>[...document.querySelectorAll('.mechanic-finding img')].every(i=>i.complete&&i.naturalWidth));
+    await page.screenshot({path:'data/mechanic-ui/desktop.png',fullPage:true});
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    const box=await page.getByRole('textbox',{name:'What did you find?',exact:true}).boundingBox();
+    assert.ok(box.height>=180 && box.width>=300);
+    await page.screenshot({path:'data/mechanic-ui/mobile.png',fullPage:true});
+    await page.getByRole('tab',{name:'My Jobs',exact:true}).click();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    assert.deepEqual(errors,[]);
+    console.log('PASS: mechanic desktop/mobile, photo previews/removal, lost-response retry without duplicate, multiple findings, no financial or Activity UI.');
+  } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

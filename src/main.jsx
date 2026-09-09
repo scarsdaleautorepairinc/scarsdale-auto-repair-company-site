@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import './styles.css';
 import ShopOrder, { WorkOrders, BackupPanel, workLabels } from './ShopOrder.jsx';
+import MechanicWorkspace, { MechanicJobs } from './MechanicWorkspace.jsx';
 
 const company = 'Scarsdale Auto Repair, Inc.';
 const city = 'Mount Vernon, NY';
@@ -749,7 +750,7 @@ function CustomerServiceWorkspace() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const tabs = [
-    ['orders', 'Work Orders'],
+    ['orders', session?.role === 'SHOP_MECHANIC' ? 'My Jobs' : 'Work Orders'],
     ['intake', 'New Visit'],
     ['tech', 'Inspection'],
     ['office', 'Estimate / Checkout'],
@@ -849,7 +850,9 @@ function CustomerServiceWorkspace() {
         {error && <p className="form-error">{error} {import.meta.env.PROD && <a href="/">Fleet Solutions Sign In</a>}</p>}
         {message && <p className="form-success">{message}</p>}
         {orders.some(o=>o.unread_updates>0) && session.role !== 'SHOP_MECHANIC' && <button className="updates-alert" onClick={()=>setActiveTab('orders')}>{orders.reduce((sum,o)=>sum+(o.unread_updates||0),0)} new shop updates</button>}
-        {activeTab === 'orders' && <WorkOrders orders={orders} staff={staff} session={session} onSelect={id=>{setSelectedId(id);setActiveTab(session.role==='SHOP_MECHANIC'?'tech':'office');}} />}
+        {activeTab === 'orders' && (session.role==='SHOP_MECHANIC'
+          ? <MechanicJobs orders={orders} session={session} workLabels={workLabels} onSelect={id=>{setSelectedId(id);setActiveTab('tech');}}/>
+          : <WorkOrders orders={orders} staff={staff} session={session} onSelect={id=>{setSelectedId(id);setActiveTab('office');}} />)}
         {activeTab === 'backups' && <BackupPanel api={api} apiBase={API_BASE}/>}
 
         {activeTab === 'intake' && (
@@ -877,7 +880,9 @@ function CustomerServiceWorkspace() {
             <label className="ticket-picker">Work order<select value={selectedId||''} onChange={e=>setSelectedId(Number(e.target.value))}><option value="" disabled>Select a visit</option>{orders.map(o=><option key={o.id} value={o.id}>#{o.id} {o.customer_name} | {o.plate}</option>)}</select></label>
             <div>
               {selected && selected.id===selectedId ? (
-                <ShopOrder key={selected.id} order={selected} view={activeTab} session={session} staff={staff} api={api} fileUrl={fileUrl} Findings={FindingHistory} onChange={afterChange} onError={setError} />
+                session.role==='SHOP_MECHANIC'
+                  ? <MechanicWorkspace key={`${session.id}-${selected.id}`} order={selected} session={session} api={api} fileUrl={fileUrl} onChange={afterChange} workLabels={workLabels}/>
+                  : <ShopOrder key={selected.id} order={selected} view={activeTab} session={session} staff={staff} api={api} fileUrl={fileUrl} Findings={FindingHistory} onChange={afterChange} onError={setError} />
               ) : (
                 <div className="empty-state">
                   <ClipboardCheck size={42} />

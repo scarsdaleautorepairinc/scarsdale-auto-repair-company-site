@@ -17,6 +17,12 @@ Payments lock prices and invoices. Additional repairs on a closed visit require 
 
 ## Updates and Access
 
+### Mechanic Screen
+
+Mechanics now have **My Jobs** (assigned jobs sorted first) and one inspection screen. Customer concern is visible at the top. Enter a finding in the large notes field, optionally add multiline parts and recommended work, and attach photos using **Take Photo** or **Add Photos**. Preview or remove attachments before **Send to Office**. Up to 10 photos are accepted (20 MB each, 24 MB total, matching the existing upload proxy limit).
+
+Notes and photos publish in one transaction. Failed requests retain the draft and selected files; retrying an identical submission cannot create another finding, even if the first response was lost after saving. Drafts survive tab changes in the same page session but not a full browser reload. Previous findings include photo previews and a New/Office reviewed indicator tied to office acknowledgment. Approved work is visible without prices. The mechanic screen has no Activity tab or payment/estimate controls; office audit history remains unchanged. Camera capture depends on the phone/browser's file picker support.
+
 The work list refreshes every 20 seconds while the page is visible. New findings, photo uploads, and repair-state changes create office alerts. Open the ticket or use Refresh Ticket to retrieve details, then acknowledge reviewed updates. A stale acknowledgment or edit is rejected instead of silently overwriting a newer change. Alerts are in-app only, not SMS/email messages.
 
 Mechanics can inspect and update repair progress, but cannot edit pricing, approve work, record payments, upload invoices, access reports, or access recovery backups. Office staff handle these operations except backups. Only administrators can create/download backups. All production APIs still require a valid Fleet session and permitted shop role; unsafe requests also require same-origin checks.

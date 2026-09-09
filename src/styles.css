@@ -392,6 +392,38 @@ h3 {
 .ticket-picker { max-width: 700px; margin: 12px 0; }
 .estimate-table input[type=checkbox] { width: 18px; height: 18px; }
 .shop-shell button:disabled { cursor: not-allowed; opacity: 0.55; }
+.mechanic-workspace, .mechanic-jobs { max-width: 1120px; margin: 0 auto; background: #fff; padding: 24px; }
+.mechanic-heading { display:flex; align-items:center; gap:16px; flex-wrap:wrap; border-bottom:1px solid #cdd8dc; padding-bottom:12px; }
+.mechanic-heading > div { flex:1; min-width:200px; }
+.mechanic-heading h2, .mechanic-jobs h2 { font-size:24px; margin:0; }
+.mechanic-heading p { margin:6px 0; }
+.mechanic-concern { padding:18px 0; border-bottom:1px solid #cdd8dc; }
+.mechanic-concern h3, .mechanic-approved h3, .mechanic-history h3 { font-size:18px; margin:0 0 10px; }
+.mechanic-concern p { font-size:20px; margin:8px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.mechanic-form { border:0; padding:20px 0; margin:0; min-width:0; display:grid; gap:16px; }
+.mechanic-form legend { font-size:20px; font-weight:700; padding-top:20px; }
+.mechanic-form label { display:grid; gap:8px; font-weight:600; }
+.mechanic-form textarea { width:100%; min-height:130px; resize:vertical; border:1px solid #bacbd1; border-radius:4px; padding:12px; font-size:18px; line-height:1.5; }
+.mechanic-form > label textarea { min-height:180px; }
+.mechanic-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.mechanic-photo-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.mechanic-photo-actions .file-button { display:inline-flex; min-height:48px; }
+.mechanic-photos { display:flex; flex-wrap:wrap; gap:12px; }
+.mechanic-photos figure, .mechanic-photos > a { position:relative; margin:0; width:160px; border:1px solid #cdd8dc; border-radius:4px; overflow:hidden; }
+.mechanic-photos img { width:100%; height:120px; object-fit:contain; background:#eef3f4; display:block; }
+.mechanic-photos figcaption, .mechanic-photos a span { display:block; padding:8px; font-size:13px; overflow-wrap:anywhere; }
+.mechanic-photos figure button { position:absolute; right:2px; top:2px; }
+.mechanic-send { justify-self:start; min-height:52px; }
+.mechanic-approved, .mechanic-history { padding:22px 0; border-top:1px solid #cdd8dc; }
+.mechanic-finding { padding:18px 0; border-bottom:1px solid #cdd8dc; }
+.mechanic-finding header { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; }
+.mechanic-finding header span { background:#e8f3ed; padding:4px 8px; font-size:14px; }
+.mechanic-finding p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.mechanic-finding time { display:block; color:#53656b; font-size:14px; margin:8px 0; }
+.mechanic-job { display:grid; grid-template-columns:1fr 1.4fr 1fr; gap:16px; width:100%; text-align:left; border:0; border-bottom:1px solid #cdd8dc; background:white; padding:20px 8px; color:#172026; cursor:pointer; }
+.mechanic-job:hover { background:#eef7f8; }
+.mechanic-job span, .mechanic-job small { display:block; overflow-wrap:anywhere; }
+@media(max-width:640px) { .mechanic-workspace, .mechanic-jobs { padding:16px; } .mechanic-fields, .mechanic-job { grid-template-columns:minmax(0,1fr); } .mechanic-photo-actions .button, .mechanic-photo-actions .file-button { width:auto; } .mechanic-send { width:100%; } }
 .order-content { border: 0; padding: 0; margin: 0; min-width: 0; }
 .shop-shell > .service-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; }
 .shop-shell > .service-tabs button { flex: 0 0 auto; padding: 12px 16px; white-space: nowrap; }

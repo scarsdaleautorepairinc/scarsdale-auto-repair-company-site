@@ -14,6 +14,7 @@ from backend.app.access import require_staff
 from backend.app.reports import income_report, SHOP_TIMEZONE
 from backend.app import workflow
 from backend.app import backups
+from backend.app import mechanic
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -30,6 +31,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="Scarsdale Auto Repair Shop System", dependencies=[Depends(require_staff)])
 app.include_router(workflow.router)
 app.include_router(backups.router)
+app.include_router(mechanic.router)
 
 app.add_middleware(
     CORSMiddleware,

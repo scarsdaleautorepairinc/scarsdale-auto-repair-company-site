@@ -31,6 +31,8 @@ def migrate(conn):
                 if table == 'estimate_items' and field == 'decision':
                     conn.execute("UPDATE estimate_items SET decision='approved' WHERE approved=1")
     conn.executescript('''
+        CREATE TABLE IF NOT EXISTS shop_finding_submissions (
+          request_key TEXT PRIMARY KEY, order_id INTEGER NOT NULL, actor TEXT NOT NULL, signature TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS shop_activity (
           id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL,
           actor TEXT NOT NULL, actor_name TEXT NOT NULL, action TEXT NOT NULL,
@@ -84,6 +86,9 @@ def enrich(conn, result):
     result['activity'] = [dict(r) for r in conn.execute('SELECT * FROM shop_activity WHERE order_id=? ORDER BY id DESC', (result['id'],))]
     result['approvals'] = [dict(r) for r in conn.execute('SELECT * FROM shop_approvals WHERE order_id=? ORDER BY id DESC', (result['id'],))]
     result['unread_updates'] = sum(e['id'] > result['office_seen_event'] and e['action'] in ('Finding added', 'Photo uploaded', 'Repair status changed') for e in result['activity'])
+    for finding in result['inspections']:
+        events = [e for e in result['activity'] if e['action'] in ('Finding added', 'Photo uploaded') and json.loads(e['detail']).get('finding_id') == finding['id']]
+        finding['office_reviewed'] = bool(events) and all(e['id'] <= result['office_seen_event'] for e in events)
     return result
 
 
