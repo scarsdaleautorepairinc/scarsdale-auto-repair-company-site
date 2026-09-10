@@ -16,6 +16,7 @@ from backend.app import workflow
 from backend.app import backups
 from backend.app import mechanic
 from backend.app import checkin
+from backend.app import visual
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -34,6 +35,7 @@ app.include_router(workflow.router)
 app.include_router(backups.router)
 app.include_router(mechanic.router)
 app.include_router(checkin.router)
+app.include_router(visual.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -441,6 +443,7 @@ def vehicle_history(plate: str | None = None, vin: str | None = None):
                     "estimate_items": detail['estimate_items'],
                     "activity": detail['activity'],
                     "authorization": detail['authorization'],
+                    "visual_instructions": detail['visual_instructions'],
                 }
             )
     return {"vehicle": vehicle, "visits": visits}

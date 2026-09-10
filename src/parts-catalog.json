@@ -1,0 +1,702 @@
+[
+  {
+    "id": 1,
+    "name": "Brake caliper",
+    "file": "001-brake-caliper.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 2,
+    "name": "Brake rotor",
+    "file": "002-brake-rotor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 3,
+    "name": "Brake pads",
+    "file": "003-brake-pads.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 4,
+    "name": "Brake drum",
+    "file": "004-brake-drum.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 5,
+    "name": "Brake shoes",
+    "file": "005-brake-shoes.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 6,
+    "name": "Brake master cylinder",
+    "file": "006-brake-master-cylinder.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 7,
+    "name": "Brake booster",
+    "file": "007-brake-booster.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 8,
+    "name": "ABS hydraulic module",
+    "file": "008-abs-hydraulic-module.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 9,
+    "name": "Brake hose",
+    "file": "009-brake-hose.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 10,
+    "name": "Brake line",
+    "file": "010-brake-line.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 11,
+    "name": "Parking brake cable",
+    "file": "011-parking-brake-cable.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 12,
+    "name": "Wheel cylinder",
+    "file": "012-wheel-cylinder.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 13,
+    "name": "Brake dust shield",
+    "file": "013-brake-dust-shield.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 14,
+    "name": "ABS wheel speed sensor",
+    "file": "014-abs-wheel-speed-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 15,
+    "name": "Brake pad wear sensor",
+    "file": "015-brake-pad-wear-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 16,
+    "name": "Wheel hub assembly",
+    "file": "016-wheel-hub-assembly.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 17,
+    "name": "Wheel bearing",
+    "file": "017-wheel-bearing.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 18,
+    "name": "Wheel stud",
+    "file": "018-wheel-stud.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 19,
+    "name": "Lug nut",
+    "file": "019-lug-nut.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 20,
+    "name": "Alloy wheel",
+    "file": "020-alloy-wheel.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 21,
+    "name": "Tire",
+    "file": "021-tire.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 22,
+    "name": "TPMS sensor",
+    "file": "022-tpms-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 23,
+    "name": "Tire valve stem",
+    "file": "023-tire-valve-stem.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 24,
+    "name": "Wheel balance weight",
+    "file": "024-wheel-balance-weight.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 25,
+    "name": "Caliper slide pin",
+    "file": "025-caliper-slide-pin.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 26,
+    "name": "Spark plug",
+    "file": "026-spark-plug.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 27,
+    "name": "Spark plug wire set",
+    "file": "027-spark-plug-wire-set.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 28,
+    "name": "Ignition coil",
+    "file": "028-ignition-coil.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 29,
+    "name": "Ignition coil pack",
+    "file": "029-ignition-coil-pack.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 30,
+    "name": "Engine air filter",
+    "file": "030-engine-air-filter.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 31,
+    "name": "Oil filter",
+    "file": "031-oil-filter.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 32,
+    "name": "Oil drain plug",
+    "file": "032-oil-drain-plug.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 33,
+    "name": "Oil dipstick",
+    "file": "033-oil-dipstick.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 34,
+    "name": "Serpentine belt",
+    "file": "034-serpentine-belt.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 35,
+    "name": "Belt tensioner",
+    "file": "035-belt-tensioner.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 36,
+    "name": "Idler pulley",
+    "file": "036-idler-pulley.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 37,
+    "name": "Alternator",
+    "file": "037-alternator.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 38,
+    "name": "Starter motor",
+    "file": "038-starter-motor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 39,
+    "name": "Battery",
+    "file": "039-battery.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 40,
+    "name": "Battery terminal clamps",
+    "file": "040-battery-terminal-clamps.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 41,
+    "name": "Valve cover",
+    "file": "041-valve-cover.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 42,
+    "name": "Valve cover gasket",
+    "file": "042-valve-cover-gasket.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 43,
+    "name": "Cylinder head gasket",
+    "file": "043-cylinder-head-gasket.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 44,
+    "name": "Engine oil pan",
+    "file": "044-engine-oil-pan.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 45,
+    "name": "Engine mount",
+    "file": "045-engine-mount.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 46,
+    "name": "Timing chain",
+    "file": "046-timing-chain.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 47,
+    "name": "Timing belt",
+    "file": "047-timing-belt.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 48,
+    "name": "Camshaft position sensor",
+    "file": "048-camshaft-position-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 49,
+    "name": "Crankshaft position sensor",
+    "file": "049-crankshaft-position-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 50,
+    "name": "Oxygen sensor",
+    "file": "050-oxygen-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 51,
+    "name": "Radiator",
+    "file": "051-radiator.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 52,
+    "name": "Coolant reservoir",
+    "file": "052-coolant-reservoir.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 53,
+    "name": "Water pump",
+    "file": "053-water-pump.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 54,
+    "name": "Thermostat",
+    "file": "054-thermostat.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 55,
+    "name": "Upper radiator hose",
+    "file": "055-upper-radiator-hose.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 56,
+    "name": "Radiator cap",
+    "file": "056-radiator-cap.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 57,
+    "name": "Radiator cooling fan",
+    "file": "057-radiator-cooling-fan.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 58,
+    "name": "Heater core",
+    "file": "058-heater-core.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 59,
+    "name": "Heater hose",
+    "file": "059-heater-hose.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 60,
+    "name": "Coolant temperature sensor",
+    "file": "060-coolant-temperature-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 61,
+    "name": "AC compressor",
+    "file": "061-ac-compressor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 62,
+    "name": "AC condenser",
+    "file": "062-ac-condenser.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 63,
+    "name": "Blower motor",
+    "file": "063-blower-motor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 64,
+    "name": "Cabin air filter",
+    "file": "064-cabin-air-filter.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 65,
+    "name": "Blend door actuator",
+    "file": "065-blend-door-actuator.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 66,
+    "name": "Fuel pump module",
+    "file": "066-fuel-pump-module.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 67,
+    "name": "Fuel injector",
+    "file": "067-fuel-injector.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 68,
+    "name": "Fuel filter",
+    "file": "068-fuel-filter.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 69,
+    "name": "Throttle body",
+    "file": "069-throttle-body.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 70,
+    "name": "Mass air flow sensor",
+    "file": "070-mass-air-flow-sensor.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 71,
+    "name": "Air intake hose",
+    "file": "071-air-intake-hose.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 72,
+    "name": "PCV valve",
+    "file": "072-pcv-valve.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 73,
+    "name": "EVAP purge valve",
+    "file": "073-evap-purge-valve.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 74,
+    "name": "Catalytic converter",
+    "file": "074-catalytic-converter.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 75,
+    "name": "Muffler",
+    "file": "075-muffler.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 76,
+    "name": "Control arm",
+    "file": "076-control-arm.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 77,
+    "name": "Ball joint",
+    "file": "077-ball-joint.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 78,
+    "name": "Outer tie rod",
+    "file": "078-outer-tie-rod.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 79,
+    "name": "Inner tie rod",
+    "file": "079-inner-tie-rod.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 80,
+    "name": "Sway bar link",
+    "file": "080-sway-bar-link.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 81,
+    "name": "Sway bar bushing",
+    "file": "081-sway-bar-bushing.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 82,
+    "name": "Shock absorber",
+    "file": "082-shock-absorber.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 83,
+    "name": "Strut assembly",
+    "file": "083-strut-assembly.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 84,
+    "name": "Coil spring",
+    "file": "084-coil-spring.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 85,
+    "name": "Strut mount",
+    "file": "085-strut-mount.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 86,
+    "name": "CV axle",
+    "file": "086-cv-axle.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 87,
+    "name": "CV boot",
+    "file": "087-cv-boot.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 88,
+    "name": "Universal joint",
+    "file": "088-universal-joint.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 89,
+    "name": "Driveshaft",
+    "file": "089-driveshaft.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 90,
+    "name": "Steering rack",
+    "file": "090-steering-rack.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 91,
+    "name": "Power steering pump",
+    "file": "091-power-steering-pump.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 92,
+    "name": "Power steering hose",
+    "file": "092-power-steering-hose.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 93,
+    "name": "Transmission filter",
+    "file": "093-transmission-filter.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 94,
+    "name": "Transmission mount",
+    "file": "094-transmission-mount.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 95,
+    "name": "Differential cover",
+    "file": "095-differential-cover.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 96,
+    "name": "Wiper blade",
+    "file": "096-wiper-blade.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 97,
+    "name": "Washer pump",
+    "file": "097-washer-pump.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 98,
+    "name": "Headlight bulb",
+    "file": "098-headlight-bulb.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 99,
+    "name": "Blade fuse",
+    "file": "099-blade-fuse.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  },
+  {
+    "id": 100,
+    "name": "Relay",
+    "file": "100-relay.jpg",
+    "source": "AI-generated illustrative reference",
+    "reviewStatus": "Requires mechanic review; not for fitment"
+  }
+]

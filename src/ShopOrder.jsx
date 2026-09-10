@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CheckInRecord } from './CheckIn.jsx';
+import { VisualInstructions, PartPicker, PartPicture, locations, partCatalog } from './VisualParts.jsx';
 import { Check, Download, Eye, Pencil, Plus, Trash2, RefreshCw, Upload } from 'lucide-react';
 
 export const workLabels = { authorized: 'Awaiting inspection', inspection_complete: 'Inspection complete', estimate_ready: 'Estimate ready', approved: 'Approved', in_progress: 'Working', waiting_parts: 'Waiting for parts', complete: 'Ready', needs_review: 'Review legacy status' };
@@ -36,12 +37,14 @@ export default function ShopOrder({ order, view, session, staff, api, fileUrl, F
   const [busy,setBusy] = useState(false);
   const [editing,setEditing] = useState(null);
   const [chosen,setChosen] = useState([]);
+  const [linePart,setLinePart] = useState(null),[pickLinePart,setPickLinePart] = useState(false);
+  useEffect(()=>{setLinePart(editing?.part_id||null);setPickLinePart(false);},[editing]);
   const [paymentKey,setPaymentKey] = useState(() => crypto.randomUUID());
   const isOffice = session.role !== 'SHOP_MECHANIC';
   const locked = Boolean(order.received_cents || order.paid_at);
   const hasApproved = order.estimate_items.some(i => i.decision === 'approved');
   const path = `/api/orders/${order.id}`;
-  const photos = order.media.filter(m => m.kind === 'photo');
+  const photos = order.media.filter(m => ['photo','asl_video'].includes(m.kind));
   const invoices = order.media.filter(m => m.kind === 'invoice');
   useEffect(() => { setPanel(view === 'tech' ? 'inspection' : 'estimate');setEditing(null);setChosen([]);setPaymentKey(crypto.randomUUID()); },[order.id,view]);
   async function execute(task, message) {
@@ -64,6 +67,7 @@ export default function ShopOrder({ order, view, session, staff, api, fileUrl, F
     <details className="customer-summary"><summary>Customer, vehicle, and intake authorization</summary><p>{order.phone} | {order.email} | {order.address}</p><p>VIN {order.vin || '-'} | Ticket code {order.access_code}</p><p>Authorization recorded for {order.authorization_name}, {date(order.authorized_at)}. Diagnostic fee quoted: {dollars(order.diagnostic_fee*100)}.</p></details>
     <p className="customer-concern"><strong>Customer concern:</strong> {order.concern}</p>
     <CheckInRecord order={order} fileUrl={fileUrl}/>
+    <VisualInstructions order={order} api={api} fileUrl={fileUrl} onChange={onChange} office={isOffice}/>
     <div className="order-tabs" role="tablist" aria-label="Selected work order">{['inspection',...(isOffice?['estimate','checkout']:[]),'activity'].map(key => <button key={key} role="tab" aria-selected={key===panel} className={key===panel?'is-active':''} onClick={() => setPanel(key)}>{({inspection:'Inspection',estimate:'Estimate & Approval',checkout:'Checkout',activity:'Activity'})[key]}</button>)}</div>
     <fieldset className="order-content" disabled={busy}>
     {panel==='inspection' && <section className="workspace-section">
@@ -82,8 +86,12 @@ export default function ShopOrder({ order, view, session, staff, api, fileUrl, F
       <div className="report-table-wrap"><table className="report-table estimate-table"><thead><tr><th>Select</th><th>Part / Service</th><th>Type</th><th>Qty / Hours</th><th>Unit / Rate</th><th>Total</th><th>Decision</th><th>Actions</th></tr></thead><tbody>{order.estimate_items.map(item=><tr key={item.id}>
         <td><input aria-label={`Select ${item.description}`} type="checkbox" disabled={locked||busy} checked={chosen.includes(item.id)} onChange={e=>setChosen(e.target.checked?[...chosen,item.id]:chosen.filter(id=>id!==item.id))}/></td><td>{item.description}</td><td>{item.kind}</td><td>{item.qty}</td><td>{dollars(item.unit_price*100)}</td><td>{dollars(item.line_total_cents)}</td><td>{item.decision}</td><td><button className="icon-action" disabled={locked||busy} aria-label={`Edit ${item.description}`} title="Edit line (requires renewed approval)" onClick={()=>setEditing(item)}><Pencil size={17}/></button><button className="icon-action" disabled={locked||busy} aria-label={`Remove ${item.description}`} title="Remove line" onClick={()=>{if(window.confirm(`Remove ${item.description}?`))execute(()=>send(`/lines/${item.id}`,{},'DELETE'),'Line removed.');}}><Trash2 size={17}/></button></td>
       </tr>)}</tbody></table></div>
-      {!locked && <form className="compact-form line-editor" key={`${order.id}-${editing?.id||'new'}`} onSubmit={async e=>{e.preventDefault();const form=e.currentTarget;const data=Object.fromEntries(new FormData(form));if(await execute(()=>send(editing?`/lines/${editing.id}`:'/lines',data,editing?'PUT':'POST'),'Estimate saved.')){setEditing(null);form.reset();}}}>
-        <label>Description<input name="description" required defaultValue={editing?.description||''}/></label><label>Type<select name="kind" defaultValue={editing?.kind||'part'}>{['part','labor','service','fee'].map(k=><option key={k} value={k}>{k}</option>)}</select></label><label>Quantity / Hours<input name="qty" type="number" min="0.001" step="0.001" defaultValue={editing?.qty||1} required/></label><label>Unit Price / Hourly Rate<input name="unit_price" type="number" min="0" step="0.01" defaultValue={editing?.unit_price??0} required/></label><button className="button primary" disabled={busy}><Plus size={18}/>{editing?'Save Revision':'Add Line'}</button>{editing&&<button type="button" className="button outline" onClick={()=>setEditing(null)}>Cancel</button>}
+      {!locked && <form className="compact-form line-editor" key={`${order.id}-${editing?.id||'new'}`} onSubmit={async e=>{e.preventDefault();const form=e.currentTarget;const data=Object.fromEntries(new FormData(form));data.part_id=linePart;if(await execute(()=>send(editing?`/lines/${editing.id}`:'/lines',data,editing?'PUT':'POST'),'Estimate saved.')){setEditing(null);setLinePart(null);setPickLinePart(false);form.reset();}}}>
+        <label>Description<input name="description" required defaultValue={editing?.description||''}/></label><label>Type<select name="kind" defaultValue={editing?.kind||'part'}>{['part','labor','service','fee'].map(k=><option key={k} value={k}>{k}</option>)}</select></label><label>Quantity / Hours<input name="qty" type="number" min="0.001" step="0.001" defaultValue={editing?.qty||1} required/></label><label>Unit Price / Hourly Rate<input name="unit_price" type="number" min="0" step="0.01" defaultValue={editing?.unit_price??0} required/></label>
+        <input type="hidden" name="part_id" value={linePart||''}/><label>Part location<select name="part_location" defaultValue={editing?.part_location||locations[0]}>{locations.map(l=><option key={l}>{l}</option>)}</select></label>
+        <div className="visual-line-picture">{linePart&&<><PartPicture id={linePart} small/><span>{partCatalog.find(p=>p.id===linePart)?.name}</span></>}<button type="button" className="button outline" onClick={()=>setPickLinePart(!pickLinePart)}>Link Part Picture</button>{linePart&&<button type="button" className="icon-action" aria-label="Remove linked part picture" onClick={()=>setLinePart(null)}><Trash2 size={18}/></button>}</div>
+        {pickLinePart&&<div className="form-wide"><PartPicker value={linePart} onChange={id=>{setLinePart(id);setPickLinePart(false);}}/></div>}
+        <button className="button primary" disabled={busy}><Plus size={18}/>{editing?'Save Revision':'Add Line'}</button>{editing&&<button type="button" className="button outline" onClick={()=>setEditing(null)}>Cancel</button>}
       </form>}
       <div className="financial-summary">{Object.entries(order.totals).map(([kind,value])=><p key={kind}>{kind}<strong>{dollars(value)}</strong></p>)}<p>Proposed total<strong>{dollars(order.proposed_cents)}</strong></p><p>Approved work<strong>{dollars(order.approved_cents)}</strong></p><p>Diagnostic fee quoted<strong>{dollars(order.diagnostic_fee*100)}</strong></p></div>
       {!locked && order.diagnostic_fee>0 && <button className="button outline" disabled={busy||order.estimate_items.some(i=>i.description==='Diagnostic fee')} onClick={()=>execute(()=>send('/lines',{description:'Diagnostic fee',kind:'fee',qty:1,unit_price:order.diagnostic_fee}),'Diagnostic fee added for approval.')}>Add Diagnostic Fee to Estimate</button>}

@@ -8,11 +8,12 @@ const fs = require('node:fs');
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   fs.mkdirSync('data/mechanic-ui',{recursive:true});
   try {
-    const created=await page.request.post('http://127.0.0.1:8013/api/intake',{data:{customer_name:'Mechanic QA Only',phone:'2025550100',plate:'MECHQA',concern:'Coolant loss and front brake noise',authorization_name:'QA Customer',requested_services:['Diagnostic']}});
+    const created=await page.request.post((process.env.SHOP_QA_API||'http://127.0.0.1:8013')+'/api/intake',{data:{customer_name:'Mechanic QA Only',phone:'2025550100',plate:'MECHQA',concern:'Coolant loss and front brake noise',authorization_name:'QA Customer',requested_services:['Diagnostic']}});
     const ticket=await created.json();
     await page.route('**/api/session',route=>route.fulfill({json:{id:'local',name:'QA Mechanic',role:'SHOP_MECHANIC'}}));
-    await page.goto('http://127.0.0.1:5179/customer-service');
+    await page.goto(process.env.SHOP_QA_URL||'http://127.0.0.1:5179/customer-service');
     await page.getByRole('button',{name:new RegExp(`MECHQA.*#${ticket.id}`)}).click();
+    await page.getByRole('button',{name:'Text',exact:true}).click();
     await page.getByRole('textbox',{name:'What did you find?',exact:true}).fill('Coolant reservoir leaking');
     await page.getByRole('textbox',{name:'Parts needed',exact:true}).fill('Coolant reservoir\nCoolant');
     const photo={name:'qa-photo.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')};

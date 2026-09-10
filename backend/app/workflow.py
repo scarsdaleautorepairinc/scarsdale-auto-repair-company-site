@@ -20,9 +20,9 @@ def cents(value):
 def migrate(conn):
     additions = {
         'repair_orders': {'revision': 'INTEGER NOT NULL DEFAULT 0', 'work_state': 'TEXT', 'assigned_to': 'TEXT', 'promised_at': 'TEXT', 'invoice_total_cents': 'INTEGER', 'office_seen_event': 'INTEGER NOT NULL DEFAULT 0'},
-        'estimate_items': {'kind': "TEXT NOT NULL DEFAULT 'service'", 'decision': "TEXT NOT NULL DEFAULT 'pending'", 'deleted_at': 'TEXT'},
-        'inspections': {'urgency': "TEXT NOT NULL DEFAULT 'attention'"},
-        'media': {'caption': "TEXT NOT NULL DEFAULT ''", 'area': "TEXT NOT NULL DEFAULT ''"},
+        'estimate_items': {'kind': "TEXT NOT NULL DEFAULT 'service'", 'decision': "TEXT NOT NULL DEFAULT 'pending'", 'deleted_at': 'TEXT', 'part_id': 'INTEGER', 'part_location': "TEXT NOT NULL DEFAULT 'Not location specific'"},
+        'inspections': {'urgency': "TEXT NOT NULL DEFAULT 'attention'", 'visual_selection': 'TEXT'},
+        'media': {'caption': "TEXT NOT NULL DEFAULT ''", 'area': "TEXT NOT NULL DEFAULT ''", 'instruction_id': 'INTEGER'},
     }
     for table, fields in additions.items():
         existing = {r['name'] for r in conn.execute(f'PRAGMA table_info({table})')}
@@ -32,6 +32,10 @@ def migrate(conn):
                 if table == 'estimate_items' and field == 'decision':
                     conn.execute("UPDATE estimate_items SET decision='approved' WHERE approved=1")
     conn.executescript('''
+        CREATE TABLE IF NOT EXISTS shop_visual_instructions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, selection TEXT NOT NULL,
+          notes TEXT NOT NULL, actor TEXT NOT NULL, actor_name TEXT NOT NULL, created_at TEXT NOT NULL,
+          request_key TEXT UNIQUE NOT NULL, fingerprint TEXT NOT NULL, asl_reviewed INTEGER NOT NULL DEFAULT 0);
         CREATE TABLE IF NOT EXISTS shop_authorizations (
           order_id INTEGER PRIMARY KEY, request_key TEXT UNIQUE NOT NULL, actor TEXT NOT NULL,
           snapshot TEXT NOT NULL, signature_path TEXT NOT NULL, pdf_path TEXT NOT NULL,
@@ -68,6 +72,7 @@ def record(conn, order_id, action, detail, request=None):
 
 
 def enrich(conn, result):
+    result['visual_instructions'] = [dict(r) for r in conn.execute('SELECT * FROM shop_visual_instructions WHERE order_id=? ORDER BY id', (result['id'],))]
     authorization = conn.execute('SELECT * FROM shop_authorizations WHERE order_id=?', (result['id'],)).fetchone()
     result['authorization'] = dict(authorization) if authorization else None
     items = result['estimate_items']
@@ -131,6 +136,8 @@ class Line(Versioned):
     kind: Literal['part', 'labor', 'service', 'fee']
     qty: Decimal = Field(gt=0, le=10000, decimal_places=3)
     unit_price: Decimal = Field(ge=0, le=1000000, decimal_places=2)
+    part_id: int | None = Field(default=None, ge=1, le=100)
+    part_location: Literal['Not location specific', 'Left front', 'Right front', 'Left rear', 'Right rear', 'Front', 'Rear'] = 'Not location specific'
 
 
 class Approval(Versioned):
@@ -169,8 +176,8 @@ def add_line(order_id: int, payload: Line, request: Request):
     office(request)
     with service().db() as conn:
         editable(checked(conn, order_id, payload.revision))
-        conn.execute('INSERT INTO estimate_items (repair_order_id,description,kind,qty,unit_price) VALUES (?,?,?,?,?)',
-                     (order_id, payload.description.strip(), payload.kind, float(payload.qty), float(payload.unit_price)))
+        conn.execute('INSERT INTO estimate_items (repair_order_id,description,kind,qty,unit_price,part_id,part_location) VALUES (?,?,?,?,?,?,?)',
+                     (order_id, payload.description.strip(), payload.kind, float(payload.qty), float(payload.unit_price), payload.part_id, payload.part_location))
         invalidate_invoice(conn, order_id)
         record(conn, order_id, 'Estimate line added', payload.model_dump(mode='json'), request)
         return service().fetch_order(conn, order_id)
@@ -185,8 +192,8 @@ def edit_line(order_id: int, item_id: int, payload: Line, request: Request):
         old = next((i for i in order['estimate_items'] if i['id'] == item_id), None)
         if not old:
             raise HTTPException(404, 'Line not found')
-        conn.execute("UPDATE estimate_items SET description=?,kind=?,qty=?,unit_price=?,decision='pending',approved=0 WHERE id=?",
-                     (payload.description.strip(), payload.kind, float(payload.qty), float(payload.unit_price), item_id))
+        conn.execute("UPDATE estimate_items SET description=?,kind=?,qty=?,unit_price=?,part_id=?,part_location=?,decision='pending',approved=0 WHERE id=?",
+                     (payload.description.strip(), payload.kind, float(payload.qty), float(payload.unit_price), payload.part_id, payload.part_location, item_id))
         invalidate_invoice(conn, order_id)
         record(conn, order_id, 'Estimate line revised; approval required', {'before': old, 'after': payload.model_dump(mode='json')}, request)
         return service().fetch_order(conn, order_id)

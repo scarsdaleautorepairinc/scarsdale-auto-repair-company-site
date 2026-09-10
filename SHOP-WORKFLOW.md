@@ -29,6 +29,18 @@ Payments lock prices and invoices. Additional repairs on a closed visit require 
 
 ### Mechanic Screen
 
+### Visual Parts and ASL Messages
+
+The existing inspection, estimate, approval, checkout, history, and reporting workflow remains in place. Mechanics default to **Pictures** and can switch back to **Text**. The 100 named illustrative parts are grouped into four picture categories. Choose a part, location, quantity, and action; add photos or an MP4/WebM ASL message and send. **Part not listed** and **Need help** avoid forcing an incorrect identification. No diagnosis or ASL translation is inferred. Earlier visual findings and videos remain attached to their individual findings and appear in vehicle history.
+
+Office staff can add **Visual Inspection Requests**, with a part picture, location, photos, and an optional ASL instruction video. An instruction video requires the staff member to confirm review by an ASL-fluent person; the system records this assertion, not a certification. No pre-recorded or automatically generated ASL instruction library is shipped. Mechanics can select **Report This Part** from a request to start a matching finding. Requests authorize inspection only and do not create approved repair work.
+
+In the existing estimate editor, use **Link Part Picture** and choose a location to explicitly link the image to the line being priced and approved. Approved line pictures appear to the mechanic with the approved description and quantity, without prices. Picture choices never approve a repair. The existing customer-decision and work-status checks still apply, including reapproval after a line revision.
+
+Office instructions accept up to five photos and one video. Mechanic findings accept up to ten photos and one video. Each submission has a 24 MB combined limit. Camera/video recording depends on the device browser; desktop users can upload files. Videos are stored as staff-only attachments, not interpreted. Generic generated illustrations are not vehicle-specific and must be reviewed with the mechanic; they cannot determine fitment or be used to order parts. Sign-language comprehension and actual-device usability still require an in-person pilot.
+
+`backend/test_visual.py` checks all 100 assets, ten visual findings, retries, roles, validation, history, and approval gates. `scripts/test-visual-ui.cjs` targets isolated ports 5181/8015 and checks every picture, office requests, image/video attachments, no-typing findings, mobile layout, linked approvals, and completion. It uses synthetic media, not customer records or real signed instructions.
+
 Mechanics now have **My Jobs** (assigned jobs sorted first) and one inspection screen. Customer concern is visible at the top. Enter a finding in the large notes field, optionally add multiline parts and recommended work, and attach photos using **Take Photo** or **Add Photos**. Preview or remove attachments before **Send to Office**. Up to 10 photos are accepted (20 MB each, 24 MB total, matching the existing upload proxy limit).
 
 Notes and photos publish in one transaction. Failed requests retain the draft and selected files; retrying an identical submission cannot create another finding, even if the first response was lost after saving. Drafts survive tab changes in the same page session but not a full browser reload. Previous findings include photo previews and a New/Office reviewed indicator tied to office acknowledgment. Approved work is visible without prices. The mechanic screen has no Activity tab or payment/estimate controls; office audit history remains unchanged. Camera capture depends on the phone/browser's file picker support.

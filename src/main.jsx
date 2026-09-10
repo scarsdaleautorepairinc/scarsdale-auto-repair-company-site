@@ -39,6 +39,7 @@ import './styles.css';
 import ShopOrder, { WorkOrders, BackupPanel, workLabels } from './ShopOrder.jsx';
 import MechanicWorkspace, { MechanicJobs } from './MechanicWorkspace.jsx';
 import SignedIntakeForm, { CheckInRecord } from './CheckIn.jsx';
+import { VisualFinding, ASLAttachments, VisualInstructions } from './VisualParts.jsx';
 
 const company = 'Scarsdale Auto Repair, Inc.';
 const city = 'Mount Vernon, NY';
@@ -1035,9 +1036,9 @@ function IntakeForm({ onCreated, onError }) {
 function FindingHistory({ inspections, photos, onUpload }) {
   const unassigned = photos.filter((photo) => !photo.inspection_id);
   function attachments(items) {
-    return <div className="photo-grid">{items.map((photo) => (
+    return <><ASLAttachments media={items.filter(p=>p.kind==='asl_video')} fileUrl={fileUrl}/><div className="photo-grid">{items.filter(p=>p.kind!=='asl_video').map((photo) => (
       <a className="finding-photo" key={photo.id} href={fileUrl(photo.stored_path)} target="_blank" rel="noreferrer">{/\.(png|jpe?g|gif|webp)$/i.test(photo.original_name) ? <img loading="lazy" src={fileUrl(photo.stored_path)} alt={photo.original_name}/> : <FileText size={24}/>}<span>{photo.original_name}</span></a>
-    ))}</div>;
+    ))}</div></>;
   }
   return <div className="finding-history">
     {inspections.length === 0 && <p className="muted">Waiting for technician findings.</p>}
@@ -1046,6 +1047,7 @@ function FindingHistory({ inspections, photos, onUpload }) {
         <h4>Finding {index + 1} | {finding.technician || 'Technician'}</h4>
         {finding.urgency && <span className={`finding-priority ${finding.urgency}`}>{finding.urgency}</span>}
         <time dateTime={finding.created_at}>{new Date(finding.created_at).toLocaleString()}</time>
+        <VisualFinding finding={finding}/>
         <p><strong>Notes</strong><br />{finding.notes || 'No inspection notes.'}</p>
         <p><strong>Parts / area</strong><br />{finding.required_parts || 'No bad part listed.'}</p>
         <p><strong>Recommended work</strong><br />{finding.labor_notes || 'No recommendation listed.'}</p>
@@ -1391,12 +1393,13 @@ function HistoryTab() {
                   <h4>Customer Concern</h4>
                   <p>{visit.concern}</p>
                   <CheckInRecord order={visit} fileUrl={fileUrl}/>
+                  <VisualInstructions order={visit} fileUrl={fileUrl}/>
                   <div className="tag-row">{visit.requested_services.map((service) => <span key={service}>{service}</span>)}</div>
                 </section>
                 {visit.inspections?.length > 0 && (
                   <section>
                     <h4>Tech Findings</h4>
-                    <FindingHistory inspections={visit.inspections} photos={(visit.media || []).filter((item) => item.kind === 'photo')} />
+                    <FindingHistory inspections={visit.inspections} photos={(visit.media || []).filter((item) => ['photo','asl_video'].includes(item.kind))} />
                   </section>
                 )}
                 <section>

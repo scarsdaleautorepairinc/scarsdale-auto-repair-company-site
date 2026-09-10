@@ -1826,3 +1826,44 @@ h3 {
     line-height: 1.45;
   }
 }
+/* Visual communication controls stay within the repair-shop workspace. */
+.part-picture { width: 100%; aspect-ratio: 1; object-fit: contain; background: #fff; border-radius: 4px; }
+.part-picture.small { width: 86px; height: 86px; flex-shrink: 0; }
+.visual-catalog { margin: 16px 0; }
+.part-reference-note { font-size: 14px; color: #53666b; }
+.part-categories { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-bottom: 16px; }
+.part-categories button, .part-tile, .visual-options button, .visual-action-grid button, .vehicle-location button, .visual-quantity button { color: #17272d; background: #fff; border: 1px solid #b4cbd1; border-radius: 6px; min-height: 48px; padding: 10px; font: inherit; cursor: pointer; }
+.part-categories button { display: flex; align-items: center; gap: 10px; text-align: left; }
+.part-categories .part-picture { width: 48px; height: 48px; }
+.part-library { display: grid; grid-template-columns: repeat(auto-fill,minmax(145px,1fr)); gap: 12px; margin-bottom: 16px; }
+.part-tile { display: flex; flex-direction: column; gap: 8px; padding: 6px; }
+.part-tile span { font-size: 15px; min-height: 50px; overflow-wrap: anywhere; font-weight: 600; }
+.visual-catalog button[aria-pressed=true], .visual-selection button[aria-pressed=true], .visual-options button[aria-pressed=true] { outline: 2px solid #215f70; outline-offset: -2px; background: #eaf6f7; }
+.visual-selected, .visual-finding, .visual-line-picture { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.visual-finding { padding: 12px 0; border-bottom: 1px solid #d0dde0; }
+.visual-finding strong, .visual-finding span { display: flex; align-items: center; gap: 8px; }
+.visual-finding p { margin: 6px 0; }
+.visual-options, .visual-quantity { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; align-items: center; }
+.visual-quantity output { min-width: 45px; text-align: center; font-weight: bold; font-size: 22px; }
+.visual-quantity button { display: grid; place-items: center; width: 54px; }
+.visual-action-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.visual-action-grid button { display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 100px; }
+.vehicle-location { display: grid; grid-template-columns: 1fr 70px 1fr; gap: 10px; max-width: 550px; margin: auto; }
+.vehicle-front { grid-column: 1 / -1; text-align: center; }
+.vehicle-map { grid-column: 2; grid-row: 2 / 4; display: grid; place-items: center; background: #e9f0f2; border-radius: 8px; }
+.vehicle-location button { min-height: 70px; }
+.visual-instructions { margin: 20px 0; padding: 18px 0; border-top: 1px solid #c6d7dc; }
+.visual-instruction { padding: 12px 0; border-bottom: 1px solid #c6d7dc; }
+.visual-instruction-form { border: 0; padding: 18px 0; display: grid; gap: 16px; min-width: 0; }
+.visual-status { display: flex; align-items: center; gap: 8px; color: #215f70; font-weight: 600; margin: 10px 0; }
+.asl-attachments { display: flex; flex-wrap: wrap; gap: 16px; }
+.asl-attachments figure { margin: 12px 0; width: min(100%,380px); }
+.asl-attachments video { width: 100%; max-height: 320px; background: #17272d; }
+.asl-attachments figcaption { font-size: 14px; }
+.asl-draft { display: block; width: min(100%,380px); max-height: 320px; background: #17272d; }
+@media(max-width:700px) {
+  .part-categories, .visual-action-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .part-library { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .visual-selected { align-items: flex-start; }
+  .part-picture.small { width: 70px; height: 70px; }
+}
