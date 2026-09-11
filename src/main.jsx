@@ -42,8 +42,11 @@ import SignedIntakeForm, { CheckInRecord } from './CheckIn.jsx';
 import { VisualFinding, ASLAttachments, VisualInstructions } from './VisualParts.jsx';
 
 const company = 'Scarsdale Auto Repair, Inc.';
-const city = 'Mount Vernon, NY';
-const streetAddress = '48 West Broad Street';
+const city = 'Scarsdale, NY';
+const streetAddress = '826 White Plains Road';
+const zipCode = '10583';
+const fullAddress = `${streetAddress}, ${city} ${zipCode}`;
+const serviceArea = 'New York and tristate areas';
 const phone = '9144828081';
 const phoneHref = '+19144828081';
 const email = 'scarsdaleautorepairinc@gmail.com';
@@ -138,7 +141,7 @@ const faqs = [
   },
   {
     question: 'What area does the business serve?',
-    answer: 'Scarsdale Auto Repair, Inc. is based in Mount Vernon, NY and supports commercial and fleet customers in the area.'
+    answer: 'Scarsdale Auto Repair, Inc. supports commercial and fleet customers operating in New York and tristate areas.'
   }
 ];
 
@@ -287,7 +290,7 @@ function Footer() {
     <footer className="site-footer">
       <div>
         <strong>{company}</strong>
-        <span>{streetAddress}, {city} 10552</span>
+        <span>{fullAddress}</span>
       </div>
       <div className="footer-contact">
         <a href={`tel:${phoneHref}`}><Phone size={16} /> {phone}</a>
@@ -311,7 +314,7 @@ function HomePage() {
           <h1>{company}</h1>
           <p>
             Professional auto repair, commercial diagnostics, fleet service, and preventive maintenance
-            for businesses operating in New York and tristate areas.
+            for businesses operating in {serviceArea}.
           </p>
           <div className="hero-actions">
             <ButtonLink href={routePath('/contact')}>Request Service</ButtonLink>
@@ -356,7 +359,7 @@ function AboutPage() {
   return (
     <>
       <PageTitle eyebrow="About Us" title={`About ${company}`}>
-        Based in {city}, serving commercial and fleet customers with dependable repair and maintenance support.
+        Serving commercial and fleet customers operating in {serviceArea} with dependable repair and maintenance support.
       </PageTitle>
       <AboutContent />
       <TestimonialsSection />
@@ -405,7 +408,7 @@ function AboutContent() {
       </div>
       <div className="section-copy">
         <p>
-          {company} is based in {city} and supports commercial vehicle operators, local businesses,
+          {company} supports commercial vehicle operators, local businesses,
           and fleet customers with practical repair and maintenance services.
         </p>
         <p>
@@ -643,7 +646,7 @@ function CareersPage() {
                 Fares Jamal<br />
                 {company}<br />
                 {streetAddress}<br />
-                Mount Vernon, NY 10552<br />
+                {city} {zipCode}<br />
                 Email: <a href={`mailto:${email}`}>{email}</a><br />
                 Phone: <a href={`tel:${phoneHref}`}>{phone}</a>
               </address>
@@ -1483,7 +1486,7 @@ function ContactSection({ compact = false }) {
           <p className="eyebrow">Contact</p>
           <h2>{compact ? company : 'Request Service Information'}</h2>
           <div className="contact-list">
-            <p><MapPin size={19} aria-hidden="true" /> {streetAddress}, Mount Vernon, NY 10552</p>
+            <p><MapPin size={19} aria-hidden="true" /> {fullAddress}</p>
             <a href={`tel:${phoneHref}`}><Phone size={19} aria-hidden="true" /> {phone}</a>
             <a href={`mailto:${email}`}><Mail size={19} aria-hidden="true" /> {email}</a>
             {!compact && (
@@ -1544,7 +1547,7 @@ function ContactPage() {
         title={company}
         actions={<ButtonLink href={`mailto:${email}`} variant="outline">Email Us</ButtonLink>}
       >
-        Request service information or contact the Mount Vernon, NY office.
+        Request service information for commercial and fleet vehicle service in {serviceArea}.
       </PageTitle>
       <ContactSection />
       <FaqSection />
